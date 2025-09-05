@@ -459,13 +459,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "users_institution_id_fkey"
-            columns: ["institution_id"]
-            isOneToOne: false
-            referencedRelation: "institutions_public"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "users_supervisor_id_fkey"
             columns: ["supervisor_id"]
             isOneToOne: false
@@ -476,35 +469,19 @@ export type Database = {
       }
     }
     Views: {
-      institutions_public: {
-        Row: {
-          created_at: string | null
-          full_name: string | null
-          id: string | null
-          short_name: string | null
-          type: Database["public"]["Enums"]["institution_type"] | null
-          verified: boolean | null
-        }
-        Insert: {
-          created_at?: string | null
-          full_name?: string | null
-          id?: string | null
-          short_name?: string | null
-          type?: Database["public"]["Enums"]["institution_type"] | null
-          verified?: boolean | null
-        }
-        Update: {
-          created_at?: string | null
-          full_name?: string | null
-          id?: string | null
-          short_name?: string | null
-          type?: Database["public"]["Enums"]["institution_type"] | null
-          verified?: boolean | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      get_institutions_for_user: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          full_name: string
+          id: string
+          institution_type: string
+          short_name: string
+          verified: boolean
+        }[]
+      }
       is_authenticated_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean
