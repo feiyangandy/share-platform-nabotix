@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Calendar, Users, Database, Download } from "lucide-react";
+import { DatasetUpload } from "@/components/upload/DatasetUpload";
+import { Search, Filter, Calendar, Users, Database, Download, Upload } from "lucide-react";
 import { useState } from "react";
+import { useRealtimeQuery } from "@/hooks/useRealtimeQuery";
 
 // Mock data for datasets
 const mockDatasets = [
@@ -60,10 +62,16 @@ const Datasets = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [showUpload, setShowUpload] = useState(false);
+  
+  const { data: datasets, loading } = useRealtimeQuery('datasets', {
+    select: '*, users(real_name), research_subjects(name)',
+    order: ['created_at', { ascending: false }]
+  });
 
-  const filteredDatasets = mockDatasets.filter(dataset => {
-    const matchesSearch = dataset.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         dataset.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredDatasets = datasets.filter(dataset => {
+    const matchesSearch = dataset.title_cn.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (dataset.keywords || []).some((keyword: string) => keyword.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesType = selectedType === "all" || dataset.type === selectedType;
     const matchesCategory = selectedCategory === "all" || dataset.category === selectedCategory;
     
@@ -76,12 +84,23 @@ const Datasets = () => {
       
       <main className="container mx-auto py-6 space-y-6">
         {/* Header */}
-        <div className="space-y-4">
-          <h1 className="text-3xl font-bold">数据集目录</h1>
-          <p className="text-muted-foreground">
-            浏览已发布的临床研究数据集，支持按研究类型、学科领域筛选查找
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="space-y-4">
+            <h1 className="text-3xl font-bold">数据集目录</h1>
+            <p className="text-muted-foreground">
+              浏览已发布的临床研究数据集，支持按研究类型、学科领域筛选查找
+            </p>
+          </div>
+          <Button onClick={() => setShowUpload(!showUpload)} className="gap-2">
+            <Upload className="h-4 w-4" />
+            {showUpload ? '隐藏上传' : '上传数据集'}
+          </Button>
         </div>
+
+        {/* Upload Component */}
+        {showUpload && (
+          <DatasetUpload onSuccess={() => setShowUpload(false)} />
+        )}
 
         {/* Search and Filters */}
         <Card>
@@ -132,62 +151,72 @@ const Datasets = () => {
         </div>
 
         {/* Dataset Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredDatasets.map((dataset) => (
-            <Card key={dataset.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-lg leading-tight">{dataset.title}</CardTitle>
-                  <Badge variant="secondary" className="shrink-0">
-                    {dataset.type}
-                  </Badge>
-                </div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {dataset.keywords.map((keyword, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      {keyword}
+        {loading ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">加载中...</p>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredDatasets.map((dataset) => (
+              <Card key={dataset.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-lg leading-tight">{dataset.title_cn}</CardTitle>
+                    <Badge variant="secondary" className="shrink-0">
+                      {dataset.type}
                     </Badge>
-                  ))}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground line-clamp-3">
-                  {dataset.description}
-                </p>
-                
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>{dataset.recordCount.toLocaleString()} 条记录</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Database className="h-4 w-4 text-muted-foreground" />
-                    <span>{dataset.variableCount} 个变量</span>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {(dataset.keywords || []).map((keyword: string, index: number) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {keyword}
+                      </Badge>
+                    ))}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{dataset.startDate}</span>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground line-clamp-3">
+                    {dataset.description}
+                  </p>
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span>{dataset.record_count?.toLocaleString() || '未知'} 条记录</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Database className="h-4 w-4 text-muted-foreground" />
+                      <span>{dataset.variable_count || '未知'} 个变量</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span>{dataset.start_date || '未设置'}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Search className="h-4 w-4 text-muted-foreground" />
+                      <span>{dataset.search_count || 0} 次查看</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Search className="h-4 w-4 text-muted-foreground" />
-                    <span>{dataset.searchCount} 次查看</span>
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between pt-2">
-                  <div>
-                    <p className="text-xs text-muted-foreground">{dataset.provider}</p>
-                    <p className="text-xs text-muted-foreground">发布于 {dataset.publishDate}</p>
+                  <div className="flex items-center justify-between pt-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        {(dataset as any).users?.real_name || '未知提供者'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        发布于 {new Date(dataset.created_at).toLocaleDateString('zh-CN')}
+                      </p>
+                    </div>
+                    <Button size="sm" className="gap-2">
+                      <Download className="h-4 w-4" />
+                      申请数据
+                    </Button>
                   </div>
-                  <Button size="sm" className="gap-2">
-                    <Download className="h-4 w-4" />
-                    申请数据
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );

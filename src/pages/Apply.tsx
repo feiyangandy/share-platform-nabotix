@@ -9,6 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { FileText, User, Building, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { useState } from "react";
+import { useRealtimeQuery } from "@/hooks/useRealtimeQuery";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Mock data for application statuses
 const mockApplications = [
@@ -56,11 +59,63 @@ const Apply = () => {
     supervisorId: "",
     agreeToTerms: false
   });
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { data: datasets } = useRealtimeQuery('datasets', {
+    select: 'id, title_cn, published, approved',
+    eq: ['published', true]
+  });
+  const { data: applications } = useRealtimeQuery('applications', {
+    select: '*, datasets(title_cn)'
+  });
+  const { data: supervisors } = useRealtimeQuery('users', {
+    select: 'id, real_name, title',
+    eq: ['role', 'data_provider']
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitting application:", formData);
-    // Handle form submission
+    
+    if (!formData.agreeToTerms) {
+      toast.error('请同意数据使用协议');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const { error } = await supabase.from('applications').insert({
+        dataset_id: formData.datasetId,
+        project_title: formData.projectTitle,
+        project_description: formData.projectDescription,
+        funding_source: formData.fundingSource || null,
+        purpose: formData.purpose,
+        supervisor_id: formData.supervisorId || null,
+        applicant_id: (await supabase.auth.getUser()).data.user?.id || '',
+      });
+
+      if (error) throw error;
+
+      toast.success('申请提交成功');
+      
+      // Reset form
+      setFormData({
+        datasetId: "",
+        projectTitle: "",
+        projectDescription: "",
+        fundingSource: "",
+        purpose: "",
+        supervisorId: "",
+        agreeToTerms: false
+      });
+      
+      setActiveTab("status");
+    } catch (error) {
+      console.error('Error submitting application:', error);
+      toast.error('提交失败: ' + (error instanceof Error ? error.message : '未知错误'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -111,9 +166,11 @@ const Apply = () => {
                       <SelectValue placeholder="请选择要申请的数据集" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">冠心病队列研究数据集</SelectItem>
-                      <SelectItem value="2">糖尿病患者生物标志物数据</SelectItem>
-                      <SelectItem value="3">脑卒中康复随访数据</SelectItem>
+                      {datasets.map((dataset: any) => (
+                        <SelectItem key={dataset.id} value={dataset.id}>
+                          {dataset.title_cn}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -183,11 +240,13 @@ const Apply = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="选择您的导师或单位负责人" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">张教授 - 华西医院心内科</SelectItem>
-                        <SelectItem value="2">李主任 - 华西医院内分泌科</SelectItem>
-                        <SelectItem value="3">王教授 - 华西医院神经内科</SelectItem>
-                      </SelectContent>
+                    <SelectContent>
+                      {supervisors.map((supervisor: any) => (
+                        <SelectItem key={supervisor.id} value={supervisor.id}>
+                          {supervisor.real_name} - {supervisor.title || ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                     </Select>
                   </div>
                 </div>
@@ -231,9 +290,9 @@ const Apply = () => {
                   </Button>
                   <Button 
                     type="submit"
-                    disabled={!formData.agreeToTerms}
+                    disabled={!formData.agreeToTerms || submitting}
                   >
-                    提交申请
+                    {submitting ? '提交中...' : '提交申请'}
                   </Button>
                 </div>
               </form>
@@ -242,28 +301,28 @@ const Apply = () => {
                 <h3 className="text-lg font-semibold">我的申请记录</h3>
                 
                 <div className="space-y-4">
-                  {mockApplications.map((application) => (
+                  {applications.map((application: any) => (
                     <Card key={application.id}>
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between">
                           <div className="space-y-2 flex-1">
-                            <h4 className="font-semibold">{application.projectTitle}</h4>
+                            <h4 className="font-semibold">{application.project_title}</h4>
                             <p className="text-sm text-muted-foreground">
-                              申请数据集：{application.datasetTitle}
+                              申请数据集：{application.datasets?.title_cn || '未知数据集'}
                             </p>
                             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                              <span>提交时间：{application.submittedAt}</span>
-                              {application.reviewedAt && (
-                                <span>审核时间：{application.reviewedAt}</span>
+                              <span>提交时间：{new Date(application.submitted_at).toLocaleDateString('zh-CN')}</span>
+                              {application.reviewed_at && (
+                                <span>审核时间：{new Date(application.reviewed_at).toLocaleDateString('zh-CN')}</span>
                               )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge 
                               variant="secondary"
-                              className={statusLabels[application.status as keyof typeof statusLabels].color}
+                              className={statusLabels[application.status as keyof typeof statusLabels]?.color || 'bg-gray-100 text-gray-800'}
                             >
-                              {statusLabels[application.status as keyof typeof statusLabels].label}
+                              {statusLabels[application.status as keyof typeof statusLabels]?.label || application.status}
                             </Badge>
                             {application.status === "approved" && (
                               <CheckCircle className="h-5 w-5 text-green-600" />
