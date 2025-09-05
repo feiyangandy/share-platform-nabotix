@@ -482,6 +482,10 @@ export type Database = {
           verified: boolean
         }[]
       }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_authenticated_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean
