@@ -8,7 +8,7 @@ import { useRealtimeStats, useRealtimeQuery } from "@/hooks/useRealtimeQuery";
 const Index = () => {
   const { stats, loading: statsLoading } = useRealtimeStats();
   const { data: recentDatasets } = useRealtimeQuery('datasets', {
-    select: 'id, title_cn, type, created_at, provider_id, users(real_name)',
+    select: 'id, title_cn, type, created_at, provider_id, users!datasets_provider_id_fkey(real_name)',
     order: ['created_at', { ascending: false }],
     limit: 3
   });

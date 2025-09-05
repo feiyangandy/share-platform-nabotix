@@ -28,7 +28,7 @@ const Datasets = () => {
   const [showUpload, setShowUpload] = useState(false);
   
   const { data: datasets, loading } = useRealtimeQuery('datasets', {
-    select: '*, users(real_name), research_subjects(name)',
+    select: '*, users!datasets_provider_id_fkey(real_name), research_subjects(name)',
     order: ['created_at', { ascending: false }]
   });
 
