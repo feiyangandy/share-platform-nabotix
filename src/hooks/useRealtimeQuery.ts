@@ -55,18 +55,15 @@ export function useRealtimeStats() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const results = await Promise.all([
-          (supabase as any).from('datasets').select('*', { count: 'exact', head: true }),
-          (supabase as any).from('users').select('*', { count: 'exact', head: true }),
-          (supabase as any).from('applications').select('*', { count: 'exact', head: true }),
-          (supabase as any).from('research_outputs').select('*', { count: 'exact', head: true }),
-        ]);
-
+        const { data, error } = await supabase.rpc('get_public_stats');
+        
+        if (error) throw error;
+        
         setStats({
-          datasets: results[0].count || 0,
-          users: results[1].count || 0,
-          applications: results[2].count || 0,
-          outputs: results[3].count || 0,
+          datasets: (data as any)?.datasets_count || 0,
+          users: (data as any)?.users_count || 0,
+          applications: (data as any)?.applications_count || 0,
+          outputs: (data as any)?.outputs_count || 0,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);

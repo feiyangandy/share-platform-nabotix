@@ -482,6 +482,10 @@ export type Database = {
           verified: boolean
         }[]
       }
+      get_public_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
