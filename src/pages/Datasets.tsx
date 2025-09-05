@@ -9,54 +9,17 @@ import { Search, Filter, Calendar, Users, Database, Download, Upload } from "luc
 import { useState } from "react";
 import { useRealtimeQuery } from "@/hooks/useRealtimeQuery";
 
-// Mock data for datasets
-const mockDatasets = [
-  {
-    id: "1",
-    title: "冠心病队列研究数据集",
-    description: "多中心前瞻性队列研究，跟踪冠心病患者5年预后情况，包含临床指标、生化指标、影像学数据等",
-    provider: "华西医院心内科",
-    type: "队列研究",
-    category: "心血管疾病",
-    recordCount: 2847,
-    variableCount: 156,
-    startDate: "2019-01-01",
-    endDate: "2024-01-01",
-    keywords: ["冠心病", "队列研究", "预后", "心血管"],
-    publishDate: "2024-01-15",
-    searchCount: 45
-  },
-  {
-    id: "2", 
-    title: "糖尿病患者生物标志物数据",
-    description: "2型糖尿病患者血清生物标志物检测数据，包含炎症因子、代谢产物、蛋白质组学数据",
-    provider: "华西医院内分泌科",
-    type: "横断面研究",
-    category: "内分泌代谢",
-    recordCount: 1563,
-    variableCount: 89,
-    startDate: "2023-03-01",
-    endDate: "2023-12-31",
-    keywords: ["糖尿病", "生物标志物", "蛋白质组学"],
-    publishDate: "2024-01-12",
-    searchCount: 32
-  },
-  {
-    id: "3",
-    title: "脑卒中康复随访数据",
-    description: "急性脑卒中患者康复治疗效果评估数据，包含运动功能、认知功能、生活质量评分",
-    provider: "华西医院神经内科",
-    type: "队列研究", 
-    category: "神经系统疾病",
-    recordCount: 892,
-    variableCount: 67,
-    startDate: "2022-06-01",
-    endDate: "2024-01-01",
-    keywords: ["脑卒中", "康复", "功能评估"],
-    publishDate: "2024-01-10",
-    searchCount: 28
-  }
-];
+// Type mappings for database enum values
+const typeLabels = {
+  cohort: '队列研究',
+  case_control: '病例对照研究', 
+  cross_sectional: '横断面研究',
+  rct: '随机对照试验',
+  registry: '登记研究',
+  biobank: '生物样本库',
+  omics: '组学数据',
+  wearable: '可穿戴设备'
+};
 
 const Datasets = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -69,10 +32,10 @@ const Datasets = () => {
     order: ['created_at', { ascending: false }]
   });
 
-  const filteredDatasets = datasets.filter(dataset => {
-    const matchesSearch = dataset.title_cn.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredDatasets = datasets.filter((dataset: any) => {
+    const matchesSearch = dataset.title_cn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (dataset.keywords || []).some((keyword: string) => keyword.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesType = selectedType === "all" || dataset.type === selectedType;
+    const matchesType = selectedType === "all" || typeLabels[dataset.type as keyof typeof typeLabels] === selectedType || dataset.type === selectedType;
     const matchesCategory = selectedCategory === "all" || dataset.category === selectedCategory;
     
     return matchesSearch && matchesType && matchesCategory;
@@ -121,10 +84,14 @@ const Datasets = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部类型</SelectItem>
-                  <SelectItem value="队列研究">队列研究</SelectItem>
-                  <SelectItem value="横断面研究">横断面研究</SelectItem>
-                  <SelectItem value="病例对照研究">病例对照研究</SelectItem>
-                  <SelectItem value="随机对照试验">随机对照试验</SelectItem>
+                  <SelectItem value="cohort">队列研究</SelectItem>
+                  <SelectItem value="cross_sectional">横断面研究</SelectItem>
+                  <SelectItem value="case_control">病例对照研究</SelectItem>
+                  <SelectItem value="rct">随机对照试验</SelectItem>
+                  <SelectItem value="registry">登记研究</SelectItem>
+                  <SelectItem value="biobank">生物样本库</SelectItem>
+                  <SelectItem value="omics">组学数据</SelectItem>
+                  <SelectItem value="wearable">可穿戴设备</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -155,15 +122,19 @@ const Datasets = () => {
           <div className="text-center py-8">
             <p className="text-muted-foreground">加载中...</p>
           </div>
+        ) : filteredDatasets.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">暂无符合条件的数据集</p>
+          </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredDatasets.map((dataset) => (
+            {filteredDatasets.map((dataset: any) => (
               <Card key={dataset.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-lg leading-tight">{dataset.title_cn}</CardTitle>
                     <Badge variant="secondary" className="shrink-0">
-                      {dataset.type}
+                      {typeLabels[dataset.type as keyof typeof typeLabels] || dataset.type}
                     </Badge>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
@@ -201,7 +172,7 @@ const Datasets = () => {
                   <div className="flex items-center justify-between pt-2">
                     <div>
                       <p className="text-xs text-muted-foreground">
-                        {(dataset as any).users?.real_name || '未知提供者'}
+                        {dataset.users?.real_name || '未知提供者'}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         发布于 {new Date(dataset.created_at).toLocaleDateString('zh-CN')}
