@@ -26,7 +26,7 @@ const Index = () => {
         {/* Hero Section */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold tracking-tight">
-            华西临床研究数据共享平台
+            临床研究数据共享平台
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             安全、标准化、协作的临床研究数据集共享平台。遵循OMOP CDM规范，严格去标识化处理，内置描述性统计分析功能。
