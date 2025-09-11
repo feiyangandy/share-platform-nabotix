@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Database, FileText, Upload, BarChart3, Info, User } from "lucide-react";
+import { Menu, Database, FileText, Upload, BarChart3, Info, User, Shield } from "lucide-react";
 
 const navigationItems = [
   { name: "首页", name_en: "Home", href: "/", icon: BarChart3 },
@@ -11,6 +11,7 @@ const navigationItems = [
   { name: "成果", name_en: "Outputs", href: "/outputs", icon: Upload },
   { name: "关于", name_en: "About", href: "/about", icon: Info },
   { name: "个人中心", name_en: "My Center", href: "/profile", icon: User },
+  { name: "管理", name_en: "Admin", href: "/admin", icon: Shield, adminOnly: true },
 ];
 
 export function Navigation() {
@@ -19,7 +20,9 @@ export function Navigation() {
 
   const NavItems = ({ mobile = false }) => (
     <>
-      {navigationItems.map((item) => {
+      {navigationItems
+        .filter((item) => !item.adminOnly) // For now, hide admin link until auth is implemented
+        .map((item) => {
         const Icon = item.icon;
         const isActive = location.pathname === item.href;
         
