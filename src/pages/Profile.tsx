@@ -23,11 +23,16 @@ const Profile = () => {
   const { toast } = useToast();
   
   const [editForm, setEditForm] = useState({
+    username: "",
+    real_name: "",
     title: "",
     field: "",
     phone: "",
-    email: ""
+    email: "",
+    education: ""
   });
+
+  const [institutions, setInstitutions] = useState<any[]>([]);
 
   useEffect(() => {
     // Set up auth state listener
@@ -58,27 +63,40 @@ const Profile = () => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+      const [profileResult, institutionsResult] = await Promise.all([
+        supabase
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle(),
+        supabase
+          .from('institutions')
+          .select('id, full_name, short_name')
+          .eq('verified', true)
+      ]);
 
-      if (error) {
-        console.error('Error fetching profile:', error);
+      if (profileResult.error) {
+        console.error('Error fetching profile:', profileResult.error);
         toast({
           title: "错误",
           description: "获取用户信息失败",
           variant: "destructive",
         });
-      } else if (data) {
-        setUserProfile(data);
+      } else if (profileResult.data) {
+        setUserProfile(profileResult.data);
         setEditForm({
-          title: data.title || "",
-          field: data.field || "",
-          phone: data.phone || "",
-          email: data.email || ""
+          username: profileResult.data.username || "",
+          real_name: profileResult.data.real_name || "",
+          title: profileResult.data.title || "",
+          field: profileResult.data.field || "",
+          phone: profileResult.data.phone || "",
+          email: profileResult.data.email || "",
+          education: (profileResult.data.education as string) || ""
         });
+      }
+
+      if (institutionsResult.data) {
+        setInstitutions(institutionsResult.data);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -119,10 +137,13 @@ const Profile = () => {
       const { error } = await supabase
         .from('users')
         .update({
+          username: editForm.username,
+          real_name: editForm.real_name,
           title: editForm.title,
           field: editForm.field,
           phone: editForm.phone,
-          email: editForm.email
+          email: editForm.email,
+          education: editForm.education as any
         })
         .eq('id', user.id);
 
@@ -131,10 +152,13 @@ const Profile = () => {
       // Update local state
       setUserProfile(prev => ({
         ...prev,
+        username: editForm.username,
+        real_name: editForm.real_name,
         title: editForm.title,
         field: editForm.field,
         phone: editForm.phone,
-        email: editForm.email
+        email: editForm.email,
+        education: editForm.education
       }));
 
       toast({
@@ -260,14 +284,50 @@ const Profile = () => {
                       <DialogTitle>编辑个人信息</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleUpdateProfile} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="title">职称</Label>
-                        <Input
-                          id="title"
-                          value={editForm.title}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="username">用户名</Label>
+                          <Input
+                            id="username"
+                            value={editForm.username}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, username: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="real_name">真实姓名</Label>
+                          <Input
+                            id="real_name"
+                            value={editForm.real_name}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, real_name: e.target.value }))}
+                          />
+                        </div>
                       </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="education">学历</Label>
+                          <Select value={editForm.education} onValueChange={(value) => setEditForm(prev => ({ ...prev, education: value }))}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="选择学历" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="bachelor">本科</SelectItem>
+                              <SelectItem value="master">硕士</SelectItem>
+                              <SelectItem value="phd">博士</SelectItem>
+                              <SelectItem value="postdoc">博士后</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="title">职称</Label>
+                          <Input
+                            id="title"
+                            value={editForm.title}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                      
                       <div className="space-y-2">
                         <Label htmlFor="field">专业领域</Label>
                         <Input
@@ -276,22 +336,25 @@ const Profile = () => {
                           onChange={(e) => setEditForm(prev => ({ ...prev, field: e.target.value }))}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">联系电话</Label>
-                        <Input
-                          id="phone"
-                          value={editForm.phone}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">邮箱地址</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={editForm.email}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                        />
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="phone">联系电话</Label>
+                          <Input
+                            id="phone"
+                            value={editForm.phone}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="email">邮箱地址</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={editForm.email}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                          />
+                        </div>
                       </div>
                       <div className="flex justify-end space-x-2">
                         <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
