@@ -8,6 +8,7 @@ import { DatasetUpload } from "@/components/upload/DatasetUpload";
 import { Search, Filter, Calendar, Users, Database, Download, Upload } from "lucide-react";
 import { useState } from "react";
 import { useRealtimeQuery } from "@/hooks/useRealtimeQuery";
+import { DatasetDetailModal } from "@/components/dataset/DatasetDetailModal";
 
 // Type mappings for database enum values
 const typeLabels = {
@@ -26,6 +27,8 @@ const Datasets = () => {
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showUpload, setShowUpload] = useState(false);
+  const [selectedDataset, setSelectedDataset] = useState(null);
+  const [showDetail, setShowDetail] = useState(false);
   
   const { data: datasets, loading } = useRealtimeQuery('datasets', {
     select: '*, users!datasets_provider_id_fkey(real_name), research_subjects(name)',
@@ -40,6 +43,11 @@ const Datasets = () => {
     
     return matchesSearch && matchesType && matchesCategory;
   });
+
+  const handleDatasetClick = (dataset: any) => {
+    setSelectedDataset(dataset);
+    setShowDetail(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -129,7 +137,11 @@ const Datasets = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredDatasets.map((dataset: any) => (
-              <Card key={dataset.id} className="hover:shadow-md transition-shadow">
+              <Card 
+                key={dataset.id} 
+                className="hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => handleDatasetClick(dataset)}
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-lg leading-tight">{dataset.title_cn}</CardTitle>
@@ -188,6 +200,12 @@ const Datasets = () => {
             ))}
           </div>
         )}
+
+        <DatasetDetailModal
+          dataset={selectedDataset}
+          open={showDetail}
+          onOpenChange={setShowDetail}
+        />
       </main>
     </div>
   );
