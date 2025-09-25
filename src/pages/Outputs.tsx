@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FileText, Award, BookOpen, TrendingUp, ExternalLink, Plus, Search } from "lucide-react";
+import { FileText, Award, BookOpen, TrendingUp, ExternalLink, Plus, Search, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 // Mock data for research outputs
 const mockOutputs = [
@@ -64,8 +65,14 @@ const Outputs = () => {
     journal: "",
     patentNumber: "",
     datasetId: "",
-    publicationUrl: ""
+    publicationUrl: "",
+    pubmedId: "",
+    authors: "",
+    citationCount: 0
   });
+
+  const [isLoadingPubmed, setIsLoadingPubmed] = useState(false);
+  const [pubmedError, setPubmedError] = useState("");
 
   const filteredOutputs = mockOutputs.filter(output => {
     const matchesSearch = output.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -74,6 +81,53 @@ const Outputs = () => {
     
     return matchesSearch && matchesType;
   });
+
+  const fetchPubMedData = async (pubmedId: string) => {
+    if (!pubmedId.trim()) {
+      setPubmedError("");
+      return;
+    }
+
+    setIsLoadingPubmed(true);
+    setPubmedError("");
+
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-pubmed', {
+        body: { pubmedId: pubmedId.trim() }
+      });
+
+      if (error) {
+        setPubmedError("无法获取PubMed数据，请检查ID是否正确");
+        return;
+      }
+
+      if (data) {
+        setNewOutput(prev => ({
+          ...prev,
+          title: data.title || prev.title,
+          abstract: data.abstract || prev.abstract,
+          journal: data.journal || prev.journal,
+          authors: data.authors || prev.authors,
+          citationCount: data.citationCount || prev.citationCount,
+          publicationUrl: data.publicationUrl || prev.publicationUrl
+        }));
+      }
+    } catch (error) {
+      setPubmedError("获取PubMed数据时出现错误");
+      console.error('PubMed fetch error:', error);
+    } finally {
+      setIsLoadingPubmed(false);
+    }
+  };
+
+  const handlePubmedIdChange = (value: string) => {
+    setNewOutput(prev => ({ ...prev, pubmedId: value }));
+    
+    // Auto-fetch when ID looks complete (typically 8 digits)
+    if (value.length >= 7 && /^\d+$/.test(value)) {
+      fetchPubMedData(value);
+    }
+  };
 
   const handleSubmitOutput = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +162,22 @@ const Outputs = () => {
                 <DialogTitle>提交研究成果</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmitOutput} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pubmedId">PubMed ID</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="pubmedId"
+                      value={newOutput.pubmedId}
+                      onChange={(e) => handlePubmedIdChange(e.target.value)}
+                      placeholder="输入PubMed ID自动获取论文信息"
+                    />
+                    {isLoadingPubmed && <Loader2 className="h-5 w-5 animate-spin self-center" />}
+                  </div>
+                  {pubmedError && (
+                    <p className="text-sm text-destructive">{pubmedError}</p>
+                  )}
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="outputTitle">成果标题 *</Label>
                   <Input
@@ -150,15 +220,34 @@ const Outputs = () => {
                 </div>
 
                 {newOutput.type === "paper" ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="journal">发表期刊</Label>
-                    <Input
-                      id="journal"
-                      value={newOutput.journal}
-                      onChange={(e) => setNewOutput(prev => ({ ...prev, journal: e.target.value }))}
-                      placeholder="期刊名称"
-                    />
-                  </div>
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="journal">发表期刊</Label>
+                      <Input
+                        id="journal"
+                        value={newOutput.journal}
+                        onChange={(e) => setNewOutput(prev => ({ ...prev, journal: e.target.value }))}
+                        placeholder="期刊名称"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="authors">作者</Label>
+                      <Input
+                        id="authors"
+                        value={newOutput.authors}
+                        onChange={(e) => setNewOutput(prev => ({ ...prev, authors: e.target.value }))}
+                        placeholder="作者姓名"
+                      />
+                    </div>
+
+                    {newOutput.citationCount > 0 && (
+                      <div className="space-y-2">
+                        <Label>引用次数</Label>
+                        <p className="text-sm text-muted-foreground">{newOutput.citationCount} 次引用</p>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="space-y-2">
                     <Label htmlFor="patentNumber">专利号</Label>
