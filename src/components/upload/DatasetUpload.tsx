@@ -27,6 +27,7 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
     keywords: [] as string[],
     record_count: '',
     variable_count: '',
+    share_all_data: false,
   });
   const [newKeyword, setNewKeyword] = useState('');
   const [dataFile, setDataFile] = useState<File | null>(null);
