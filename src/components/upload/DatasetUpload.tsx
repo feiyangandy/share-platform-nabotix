@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Upload, File, X, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -30,6 +31,12 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
   const [newKeyword, setNewKeyword] = useState('');
   const [dataFile, setDataFile] = useState<File | null>(null);
   const [dictFile, setDictFile] = useState<File | null>(null);
+  const [agreements, setAgreements] = useState({
+    dataSharing: false,
+    ethics: false,
+    ownership: false,
+    privacy: false,
+  });
 
   const addKeyword = () => {
     if (newKeyword.trim() && !formData.keywords.includes(newKeyword.trim())) {
@@ -70,6 +77,13 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
     
     if (!dataFile) {
       toast.error('请选择数据文件');
+      return;
+    }
+
+    // Check if all agreements are accepted
+    const allAgreementsAccepted = Object.values(agreements).every(Boolean);
+    if (!allAgreementsAccepted) {
+      toast.error('请阅读并同意所有条款和协议');
       return;
     }
 
@@ -124,6 +138,12 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
       });
       setDataFile(null);
       setDictFile(null);
+      setAgreements({
+        dataSharing: false,
+        ethics: false,
+        ownership: false,
+        privacy: false,
+      });
       
       onSuccess?.();
     } catch (error) {
@@ -320,11 +340,76 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
             </div>
           </div>
 
+          {/* Agreements and Terms */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">协议与条款</h3>
+            <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="dataSharing"
+                  checked={agreements.dataSharing}
+                  onCheckedChange={(checked) => 
+                    setAgreements(prev => ({ ...prev, dataSharing: checked as boolean }))
+                  }
+                />
+                <Label htmlFor="dataSharing" className="text-sm leading-5">
+                  我同意《数据共享协议》，理解数据将用于科学研究目的，并遵守相关的数据使用规范。
+                </Label>
+              </div>
+
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="ethics"
+                  checked={agreements.ethics}
+                  onCheckedChange={(checked) => 
+                    setAgreements(prev => ({ ...prev, ethics: checked as boolean }))
+                  }
+                />
+                <Label htmlFor="ethics" className="text-sm leading-5">
+                  我确认所提交的数据已通过伦理委员会审批，并且符合相关法律法规要求。
+                </Label>
+              </div>
+
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="ownership"
+                  checked={agreements.ownership}
+                  onCheckedChange={(checked) => 
+                    setAgreements(prev => ({ ...prev, ownership: checked as boolean }))
+                  }
+                />
+                <Label htmlFor="ownership" className="text-sm leading-5">
+                  我确认拥有此数据的合法使用权，有权限将其用于科学研究合作。
+                </Label>
+              </div>
+
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="privacy"
+                  checked={agreements.privacy}
+                  onCheckedChange={(checked) => 
+                    setAgreements(prev => ({ ...prev, privacy: checked as boolean }))
+                  }
+                />
+                <Label htmlFor="privacy" className="text-sm leading-5">
+                  我确认已对数据进行适当的去标识化处理，保护了受试者的隐私权益。
+                </Label>
+              </div>
+
+              <p className="text-xs text-muted-foreground mt-4">
+                * 提交数据即表示您同意平台的服务条款和隐私政策。所有数据将经过严格审核后方可共享。
+              </p>
+            </div>
+          </div>
+
           <div className="flex justify-end space-x-4">
             <Button type="button" variant="outline" disabled={uploading}>
               保存草稿
             </Button>
-            <Button type="submit" disabled={uploading}>
+            <Button 
+              type="submit" 
+              disabled={uploading || !Object.values(agreements).every(Boolean)}
+            >
               {uploading ? '上传中...' : '提交审核'}
             </Button>
           </div>
