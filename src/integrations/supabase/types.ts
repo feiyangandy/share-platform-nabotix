@@ -190,6 +190,7 @@ export type Database = {
           published: boolean | null
           record_count: number | null
           search_count: number | null
+          share_all_data: boolean | null
           start_date: string | null
           subject_area_id: string | null
           supervisor_id: string | null
@@ -212,6 +213,7 @@ export type Database = {
           published?: boolean | null
           record_count?: number | null
           search_count?: number | null
+          share_all_data?: boolean | null
           start_date?: string | null
           subject_area_id?: string | null
           supervisor_id?: string | null
@@ -234,6 +236,7 @@ export type Database = {
           published?: boolean | null
           record_count?: number | null
           search_count?: number | null
+          share_all_data?: boolean | null
           start_date?: string | null
           subject_area_id?: string | null
           supervisor_id?: string | null

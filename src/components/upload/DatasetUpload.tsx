@@ -118,6 +118,7 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
         variable_count: formData.variable_count ? parseInt(formData.variable_count) : null,
         file_url: dataFilePath,
         data_dict_url: dictFilePath,
+        share_all_data: formData.share_all_data,
         provider_id: (await supabase.auth.getUser()).data.user?.id || '',
       });
 
@@ -136,6 +137,7 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
         keywords: [],
         record_count: '',
         variable_count: '',
+        share_all_data: false,
       });
       setDataFile(null);
       setDictFile(null);
@@ -268,6 +270,29 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
                   onChange={(e) => setFormData(prev => ({ ...prev, variable_count: e.target.value }))}
                   placeholder="数据字段数量"
                 />
+              </div>
+            </div>
+
+            {/* Data Sharing Options */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">数据共享设置</h3>
+              
+              <div className="flex items-center space-x-3 p-4 border rounded-lg bg-blue-50/50">
+                <Checkbox
+                  id="shareAllData"
+                  checked={formData.share_all_data}
+                  onCheckedChange={(checked) => 
+                    setFormData(prev => ({ ...prev, share_all_data: checked as boolean }))
+                  }
+                />
+                <div>
+                  <Label htmlFor="shareAllData" className="text-sm font-medium">
+                    分享所有数据
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    勾选此项表示您愿意分享数据集中的所有数据供研究使用。如果不勾选，则只分享部分数据或统计摘要。
+                  </p>
+                </div>
               </div>
             </div>
           </div>
