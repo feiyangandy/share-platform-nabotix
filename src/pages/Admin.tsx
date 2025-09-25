@@ -40,13 +40,13 @@ const Admin = () => {
       if (error) throw error;
 
       toast({
-        title: "Dataset approved",
-        description: "The dataset has been approved and published.",
+        title: "数据集已批准",
+        description: "数据集已批准并发布。",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to approve dataset.",
+        title: "错误",
+        description: "批准数据集失败。",
         variant: "destructive",
       });
     }
@@ -62,13 +62,13 @@ const Admin = () => {
       if (error) throw error;
 
       toast({
-        title: "Dataset rejected",
-        description: "The dataset has been rejected.",
+        title: "数据集已拒绝",
+        description: "数据集已被拒绝。",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to reject dataset.",
+        title: "错误",
+        description: "拒绝数据集失败。",
         variant: "destructive",
       });
     }
@@ -88,13 +88,13 @@ const Admin = () => {
       if (error) throw error;
 
       toast({
-        title: "Application approved",
-        description: "The application has been approved.",
+        title: "申请已批准",
+        description: "申请已被批准。",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to approve application.",
+        title: "错误",
+        description: "批准申请失败。",
         variant: "destructive",
       });
     }
@@ -113,13 +113,13 @@ const Admin = () => {
       if (error) throw error;
 
       toast({
-        title: "Application rejected", 
-        description: "The application has been rejected.",
+        title: "申请已拒绝", 
+        description: "申请已被拒绝。",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to reject application.",
+        title: "错误",
+        description: "拒绝申请失败。",
         variant: "destructive",
       });
     }
@@ -135,13 +135,13 @@ const Admin = () => {
       if (error) throw error;
 
       toast({
-        title: "Institution verified",
-        description: "The institution has been verified.",
+        title: "机构已验证",
+        description: "机构已被验证。",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to verify institution.",
+        title: "错误",
+        description: "验证机构失败。",
         variant: "destructive",
       });
     }
@@ -150,13 +150,13 @@ const Admin = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Approved</Badge>;
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">已批准</Badge>;
       case 'denied':
-        return <Badge variant="destructive">Denied</Badge>;
+        return <Badge variant="destructive">已拒绝</Badge>;
       case 'under_review':
-        return <Badge variant="secondary">Under Review</Badge>;
+        return <Badge variant="secondary">审查中</Badge>;
       case 'submitted':
-        return <Badge variant="secondary">Pending</Badge>;
+        return <Badge variant="secondary">待审核</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -170,8 +170,8 @@ const Admin = () => {
         <div className="flex items-center gap-3">
           <Shield className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage users, datasets, and platform operations</p>
+            <h1 className="text-3xl font-bold">管理员仪表板</h1>
+            <p className="text-muted-foreground">管理用户、数据集和平台操作</p>
           </div>
         </div>
 
@@ -179,41 +179,41 @@ const Admin = () => {
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Users
+              用户
             </TabsTrigger>
             <TabsTrigger value="datasets" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
-              Datasets
+              数据集
             </TabsTrigger>
             <TabsTrigger value="applications" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              Applications
+              申请
             </TabsTrigger>
             <TabsTrigger value="institutions" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
-              Institutions
+              机构
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>User Management</CardTitle>
+                <CardTitle>用户管理</CardTitle>
                 <CardDescription>
-                  View and manage all registered users
+                  查看和管理所有注册用户
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {usersLoading ? (
-                  <div>Loading users...</div>
+                  <div>正在加载用户...</div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Registered</TableHead>
+                        <TableHead>姓名</TableHead>
+                        <TableHead>邮箱</TableHead>
+                        <TableHead>角色</TableHead>
+                        <TableHead>注册时间</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -237,23 +237,23 @@ const Admin = () => {
           <TabsContent value="datasets" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Dataset Approval</CardTitle>
+                <CardTitle>数据集审批</CardTitle>
                 <CardDescription>
-                  Review and approve datasets for publication
+                  审查和批准数据集发布
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {datasetsLoading ? (
-                  <div>Loading datasets...</div>
+                  <div>正在加载数据集...</div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Provider</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead>标题</TableHead>
+                        <TableHead>类型</TableHead>
+                        <TableHead>提供者</TableHead>
+                        <TableHead>状态</TableHead>
+                        <TableHead>操作</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -264,11 +264,11 @@ const Admin = () => {
                           <TableCell>{dataset.users?.real_name}</TableCell>
                           <TableCell>
                             {dataset.approved && dataset.published ? (
-                              <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Published</Badge>
+                              <Badge className="bg-green-100 text-green-800 hover:bg-green-100">已发布</Badge>
                             ) : dataset.approved ? (
-                              <Badge variant="secondary">Approved</Badge>
+                              <Badge variant="secondary">已批准</Badge>
                             ) : (
-                              <Badge variant="outline">Pending</Badge>
+                              <Badge variant="outline">待审批</Badge>
                             )}
                           </TableCell>
                           <TableCell className="space-x-2">
@@ -280,7 +280,7 @@ const Admin = () => {
                                   className="bg-green-600 hover:bg-green-700"
                                 >
                                   <CheckCircle className="h-4 w-4 mr-1" />
-                                  Approve
+                                  批准
                                 </Button>
                                 <Button 
                                   size="sm" 
@@ -288,7 +288,7 @@ const Admin = () => {
                                   onClick={() => handleRejectDataset(dataset.id)}
                                 >
                                   <XCircle className="h-4 w-4 mr-1" />
-                                  Reject
+                                  拒绝
                                 </Button>
                               </>
                             )}
@@ -305,24 +305,24 @@ const Admin = () => {
           <TabsContent value="applications" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Application Review</CardTitle>
+                <CardTitle>申请审查</CardTitle>
                 <CardDescription>
-                  Review and manage data access applications
+                  审查和管理数据访问申请
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {applicationsLoading ? (
-                  <div>Loading applications...</div>
+                  <div>正在加载申请...</div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Project Title</TableHead>
-                        <TableHead>Applicant</TableHead>
-                        <TableHead>Dataset</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Submitted</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead>项目标题</TableHead>
+                        <TableHead>申请人</TableHead>
+                        <TableHead>数据集</TableHead>
+                        <TableHead>状态</TableHead>
+                        <TableHead>提交时间</TableHead>
+                        <TableHead>操作</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -342,7 +342,7 @@ const Admin = () => {
                                   className="bg-green-600 hover:bg-green-700"
                                 >
                                   <CheckCircle className="h-4 w-4 mr-1" />
-                                  Approve
+                                  批准
                                 </Button>
                                 <Button 
                                   size="sm" 
@@ -350,7 +350,7 @@ const Admin = () => {
                                   onClick={() => handleRejectApplication(application.id)}
                                 >
                                   <XCircle className="h-4 w-4 mr-1" />
-                                  Reject
+                                  拒绝
                                 </Button>
                               </>
                             )}
@@ -367,24 +367,24 @@ const Admin = () => {
           <TabsContent value="institutions" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Institution Management</CardTitle>
+                <CardTitle>机构管理</CardTitle>
                 <CardDescription>
-                  Verify and manage institutions
+                  验证和管理机构
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {institutionsLoading ? (
-                  <div>Loading institutions...</div>
+                  <div>正在加载机构...</div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Full Name</TableHead>
-                        <TableHead>Short Name</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead>全称</TableHead>
+                        <TableHead>简称</TableHead>
+                        <TableHead>类型</TableHead>
+                        <TableHead>状态</TableHead>
+                        <TableHead>创建时间</TableHead>
+                        <TableHead>操作</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -397,12 +397,12 @@ const Admin = () => {
                             {institution.verified ? (
                               <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
                                 <CheckCircle className="h-3 w-3 mr-1" />
-                                Verified
+                                已验证
                               </Badge>
                             ) : (
                               <Badge variant="secondary">
                                 <Clock className="h-3 w-3 mr-1" />
-                                Pending
+                                待审核
                               </Badge>
                             )}
                           </TableCell>
@@ -415,7 +415,7 @@ const Admin = () => {
                                 className="bg-green-600 hover:bg-green-700"
                               >
                                 <CheckCircle className="h-4 w-4 mr-1" />
-                                Verify
+                                验证
                               </Button>
                             )}
                           </TableCell>
