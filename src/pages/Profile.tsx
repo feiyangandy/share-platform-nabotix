@@ -8,47 +8,84 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { User, Building, FileText, Download, Settings, Edit, Shield, Key } from "lucide-react";
-import { useState } from "react";
-
-// Mock user data
-const mockUser = {
-  id: "123456789",
-  username: "dr_zhang",
-  realName: "张医生",
-  idType: "identity_card",
-  idNumber: "510***********1234",
-  education: "phd",
-  title: "主治医师",
-  field: "心血管内科",
-  institution: "四川大学华西医院",
-  phone: "138****5678",
-  email: "zhang.doctor@email.com",
-  role: "registered_researcher",
-  createdAt: "2023-06-15",
-  lastLogin: "2024-01-15 14:30"
-};
-
-// Mock activities
-const mockApplications = [
-  { id: "1", dataset: "冠心病队列研究数据集", status: "approved", date: "2024-01-10" },
-  { id: "2", dataset: "糖尿病患者生物标志物数据", status: "under_review", date: "2024-01-12" },
-  { id: "3", dataset: "脑卒中康复随访数据", status: "submitted", date: "2024-01-14" }
-];
-
-const mockOutputs = [
-  { id: "1", title: "基于机器学习的心血管风险预测", type: "paper", date: "2024-01-05" },
-  { id: "2", title: "糖尿病并发症早期识别算法", type: "paper", date: "2024-01-03" }
-];
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { User as SupabaseUser, Session } from "@supabase/supabase-js";
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const { toast } = useToast();
+  
   const [editForm, setEditForm] = useState({
-    title: mockUser.title,
-    field: mockUser.field,
-    phone: mockUser.phone,
-    email: mockUser.email
+    title: "",
+    field: "",
+    phone: "",
+    email: ""
   });
+
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchUserProfile(session.user.id);
+        } else {
+          setUserProfile(null);
+          setLoading(false);
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        toast({
+          title: "错误",
+          description: "获取用户信息失败",
+          variant: "destructive",
+        });
+      } else if (data) {
+        setUserProfile(data);
+        setEditForm({
+          title: data.title || "",
+          field: data.field || "",
+          phone: data.phone || "",
+          email: data.email || ""
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const statusLabels = {
     submitted: { label: "已提交", color: "bg-blue-100 text-blue-800" },
@@ -71,12 +108,94 @@ const Profile = () => {
     postdoc: "博士后"
   };
 
-  const handleUpdateProfile = (e: React.FormEvent) => {
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user || !userProfile) return;
+
+    setUpdating(true);
     console.log("Updating profile:", editForm);
-    setIsEditDialogOpen(false);
-    // Handle profile update
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          title: editForm.title,
+          field: editForm.field,
+          phone: editForm.phone,
+          email: editForm.email
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setUserProfile(prev => ({
+        ...prev,
+        title: editForm.title,
+        field: editForm.field,
+        phone: editForm.phone,
+        email: editForm.email
+      }));
+
+      toast({
+        title: "更新成功",
+        description: "个人信息已更新",
+      });
+      
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "更新失败",
+        description: "更新个人信息时发生错误",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdating(false);
+    }
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto py-6">
+          <div className="text-center">加载中...</div>
+        </main>
+      </div>
+    );
+  }
+
+  // Show login prompt if not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto py-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">请先登录</h1>
+            <p>您需要登录才能查看个人信息</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Show profile not found if no profile data
+  if (!userProfile) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto py-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">个人信息不完整</h1>
+            <p>请联系管理员完善您的个人信息</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,14 +211,14 @@ const Profile = () => {
             </p>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Badge 
-              variant="secondary"
-              className="bg-primary/10 text-primary"
-            >
-              {roleLabels[mockUser.role as keyof typeof roleLabels]}
-            </Badge>
-          </div>
+            <div className="flex items-center gap-2">
+              <Badge 
+                variant="secondary"
+                className="bg-primary/10 text-primary"
+              >
+                {roleLabels[userProfile.role as keyof typeof roleLabels] || userProfile.role}
+              </Badge>
+            </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -178,8 +297,8 @@ const Profile = () => {
                         <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                           取消
                         </Button>
-                        <Button type="submit">
-                          保存
+                        <Button type="submit" disabled={updating}>
+                          {updating ? "保存中..." : "保存"}
                         </Button>
                       </div>
                     </form>
@@ -191,48 +310,48 @@ const Profile = () => {
                   <div className="space-y-4">
                     <div className="grid grid-cols-3 gap-2">
                       <Label className="text-muted-foreground">用户名</Label>
-                      <div className="col-span-2">{mockUser.username}</div>
+                      <div className="col-span-2">{userProfile.username}</div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <Label className="text-muted-foreground">真实姓名</Label>
-                      <div className="col-span-2">{mockUser.realName}</div>
+                      <div className="col-span-2">{userProfile.real_name}</div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <Label className="text-muted-foreground">身份证号</Label>
-                      <div className="col-span-2">{mockUser.idNumber}</div>
+                      <div className="col-span-2">{userProfile.id_number?.replace(/(\d{6})\d*(\d{4})/, '$1****$2')}</div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <Label className="text-muted-foreground">学历</Label>
                       <div className="col-span-2">
-                        {educationLabels[mockUser.education as keyof typeof educationLabels]}
+                        {educationLabels[userProfile.education as keyof typeof educationLabels] || userProfile.education}
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <Label className="text-muted-foreground">职称</Label>
-                      <div className="col-span-2">{mockUser.title}</div>
+                      <div className="col-span-2">{userProfile.title || "未填写"}</div>
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <div className="grid grid-cols-3 gap-2">
                       <Label className="text-muted-foreground">专业领域</Label>
-                      <div className="col-span-2">{mockUser.field}</div>
+                      <div className="col-span-2">{userProfile.field || "未填写"}</div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <Label className="text-muted-foreground">所属机构</Label>
-                      <div className="col-span-2">{mockUser.institution}</div>
+                      <div className="col-span-2">{userProfile.institution_id || "未填写"}</div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <Label className="text-muted-foreground">联系电话</Label>
-                      <div className="col-span-2">{mockUser.phone}</div>
+                      <div className="col-span-2">{userProfile.phone || "未填写"}</div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <Label className="text-muted-foreground">邮箱地址</Label>
-                      <div className="col-span-2">{mockUser.email}</div>
+                      <div className="col-span-2">{userProfile.email || user.email}</div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <Label className="text-muted-foreground">注册时间</Label>
-                      <div className="col-span-2">{mockUser.createdAt}</div>
+                      <div className="col-span-2">{new Date(userProfile.created_at).toLocaleDateString()}</div>
                     </div>
                   </div>
                 </div>
@@ -247,20 +366,9 @@ const Profile = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockApplications.map((application) => (
-                    <div key={application.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="space-y-1">
-                        <h4 className="font-medium">{application.dataset}</h4>
-                        <p className="text-sm text-muted-foreground">申请时间：{application.date}</p>
-                      </div>
-                      <Badge 
-                        variant="secondary"
-                        className={statusLabels[application.status as keyof typeof statusLabels].color}
-                      >
-                        {statusLabels[application.status as keyof typeof statusLabels].label}
-                      </Badge>
-                    </div>
-                  ))}
+                  <div className="text-center text-muted-foreground">
+                    <p>申请记录功能正在开发中...</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -273,19 +381,9 @@ const Profile = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockOutputs.map((output) => (
-                    <div key={output.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="space-y-1">
-                        <h4 className="font-medium">{output.title}</h4>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">
-                            {output.type === "paper" ? "论文" : "专利"}
-                          </Badge>
-                          <span className="text-sm text-muted-foreground">提交时间：{output.date}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                  <div className="text-center text-muted-foreground">
+                    <p>研究成果功能正在开发中...</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -317,7 +415,7 @@ const Profile = () => {
                   <div>
                     <h4 className="font-medium">登录记录</h4>
                     <p className="text-sm text-muted-foreground">
-                      最后登录：{mockUser.lastLogin}
+                      最后登录：{user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : "未知"}
                     </p>
                   </div>
                   <Button variant="outline">
