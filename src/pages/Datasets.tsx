@@ -9,6 +9,7 @@ import { Search, Filter, Calendar, Users, Database, Download, Upload } from "luc
 import { useState } from "react";
 import { useRealtimeQuery } from "@/hooks/useRealtimeQuery";
 import { DatasetDetailModal } from "@/components/dataset/DatasetDetailModal";
+import { DatasetTrendChart } from "@/components/dataset/DatasetTrendChart";
 
 // Type mappings for database enum values
 const typeLabels = {
@@ -71,6 +72,11 @@ const Datasets = () => {
         {/* Upload Component */}
         {showUpload && (
           <DatasetUpload onSuccess={() => setShowUpload(false)} />
+        )}
+
+        {/* Trend Chart */}
+        {!loading && datasets.length > 0 && (
+          <DatasetTrendChart datasets={datasets} />
         )}
 
         {/* Search and Filters */}
