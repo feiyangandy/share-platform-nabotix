@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,11 +9,72 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useRealtimeQuery } from "@/hooks/useRealtimeQuery";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Users, Database, FileText, Building2, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Shield, Users, Database, FileText, Building2, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("users");
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Check authentication and admin authorization
+  useEffect(() => {
+    const checkAuthorization = async () => {
+      try {
+        // Check if user is authenticated
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError || !user) {
+          toast({
+            title: "未授权",
+            description: "请先登录以访问管理面板。",
+            variant: "destructive",
+          });
+          navigate('/auth');
+          return;
+        }
+
+        // Check if user is admin using the secure RPC function
+        const { data: isAdmin, error: roleError } = await supabase.rpc('is_admin');
+        
+        if (roleError) {
+          console.error('Role check error:', roleError);
+          toast({
+            title: "授权检查失败",
+            description: "无法验证管理员权限。",
+            variant: "destructive",
+          });
+          navigate('/');
+          return;
+        }
+
+        if (!isAdmin) {
+          toast({
+            title: "访问被拒绝",
+            description: "您没有访问管理面板的权限。",
+            variant: "destructive",
+          });
+          navigate('/');
+          return;
+        }
+
+        setIsAuthorized(true);
+      } catch (error) {
+        console.error('Authorization check failed:', error);
+        toast({
+          title: "错误",
+          description: "授权检查失败。",
+          variant: "destructive",
+        });
+        navigate('/');
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuthorization();
+  }, [navigate, toast]);
 
   const { data: users, loading: usersLoading } = useRealtimeQuery('users', {
     select: 'id, real_name, email, role, created_at, institution_id'
@@ -161,6 +223,23 @@ const Admin = () => {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  // Show loading state while checking authorization
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground">正在验证权限...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only render admin panel if authorized
+  if (!isAuthorized) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">
