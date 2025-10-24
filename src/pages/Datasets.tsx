@@ -5,11 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatasetUpload } from "@/components/upload/DatasetUpload";
-import { Search, Filter, Calendar, Users, Database, Download, Upload } from "lucide-react";
+import { Search, Filter, Calendar, Users, Database, Download, Upload, X } from "lucide-react";
 import { useState } from "react";
 import { useRealtimeQuery } from "@/hooks/useRealtimeQuery";
 import { DatasetDetailModal } from "@/components/dataset/DatasetDetailModal";
 import { DatasetTrendChart } from "@/components/dataset/DatasetTrendChart";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 // Type mappings for database enum values
 const typeLabels = {
@@ -27,6 +31,8 @@ const Datasets = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
   const [showUpload, setShowUpload] = useState(false);
   const [selectedDataset, setSelectedDataset] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
@@ -42,7 +48,12 @@ const Datasets = () => {
     const matchesType = selectedType === "all" || typeLabels[dataset.type as keyof typeof typeLabels] === selectedType || dataset.type === selectedType;
     const matchesCategory = selectedCategory === "all" || dataset.category === selectedCategory;
     
-    return matchesSearch && matchesType && matchesCategory;
+    // Date range filter
+    const datasetDate = new Date(dataset.created_at);
+    const matchesDateFrom = !dateFrom || datasetDate >= dateFrom;
+    const matchesDateTo = !dateTo || datasetDate <= dateTo;
+    
+    return matchesSearch && matchesType && matchesCategory && matchesDateFrom && matchesDateTo;
   });
 
   const handleDatasetClick = (dataset: any) => {
@@ -82,7 +93,7 @@ const Datasets = () => {
         {/* Search and Filters */}
         <Card>
           <CardContent className="p-6">
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-6">
               <div className="relative md:col-span-2">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
@@ -120,6 +131,74 @@ const Datasets = () => {
                   <SelectItem value="肿瘤学">肿瘤学</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {/* Date From */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "justify-start text-left font-normal",
+                      !dateFrom && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {dateFrom ? format(dateFrom, "yyyy-MM-dd") : "开始日期"}
+                    {dateFrom && (
+                      <X
+                        className="ml-auto h-4 w-4 opacity-50 hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDateFrom(undefined);
+                        }}
+                      />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={dateFrom}
+                    onSelect={setDateFrom}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {/* Date To */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "justify-start text-left font-normal",
+                      !dateTo && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {dateTo ? format(dateTo, "yyyy-MM-dd") : "结束日期"}
+                    {dateTo && (
+                      <X
+                        className="ml-auto h-4 w-4 opacity-50 hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDateTo(undefined);
+                        }}
+                      />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={dateTo}
+                    onSelect={setDateTo}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </CardContent>
         </Card>
