@@ -197,8 +197,12 @@ const Outputs = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="paper">学术论文</SelectItem>
-                      <SelectItem value="patent">专利</SelectItem>
+                      <SelectItem value="project">项目/课题</SelectItem>
+                      <SelectItem value="paper">论文</SelectItem>
+                      <SelectItem value="invention_patent">发明专利</SelectItem>
+                      <SelectItem value="utility_patent">实用新型专利</SelectItem>
+                      <SelectItem value="software_copyright">软件著作权</SelectItem>
+                      <SelectItem value="other_award">其他获奖</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -364,8 +368,12 @@ const Outputs = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部类型</SelectItem>
-                  <SelectItem value="paper">学术论文</SelectItem>
-                  <SelectItem value="patent">专利</SelectItem>
+                  <SelectItem value="project">项目/课题</SelectItem>
+                  <SelectItem value="paper">论文</SelectItem>
+                  <SelectItem value="invention_patent">发明专利</SelectItem>
+                  <SelectItem value="utility_patent">实用新型专利</SelectItem>
+                  <SelectItem value="software_copyright">软件著作权</SelectItem>
+                  <SelectItem value="other_award">其他获奖</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -379,12 +387,18 @@ const Outputs = () => {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-3">
-                    <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-3">
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">{output.title}</h3>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant={output.type === "paper" ? "default" : "secondary"}>
-                            {output.type === "paper" ? "论文" : "专利"}
+                            {output.type === "project" && "项目/课题"}
+                            {output.type === "paper" && "论文"}
+                            {output.type === "invention_patent" && "发明专利"}
+                            {output.type === "utility_patent" && "实用新型专利"}
+                            {output.type === "software_copyright" && "软件著作权"}
+                            {output.type === "other_award" && "其他获奖"}
+                            {output.type === "patent" && "专利"}
                           </Badge>
                           {output.journal && (
                             <span className="text-sm text-muted-foreground">

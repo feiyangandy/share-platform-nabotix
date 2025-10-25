@@ -547,7 +547,14 @@ export type Database = {
         | "government"
         | "enterprise"
         | "other"
-      output_type: "paper" | "patent"
+      output_type:
+        | "paper"
+        | "patent"
+        | "project"
+        | "invention_patent"
+        | "utility_patent"
+        | "software_copyright"
+        | "other_award"
       user_role:
         | "public_visitor"
         | "registered_researcher"
@@ -710,7 +717,15 @@ export const Constants = {
         "enterprise",
         "other",
       ],
-      output_type: ["paper", "patent"],
+      output_type: [
+        "paper",
+        "patent",
+        "project",
+        "invention_patent",
+        "utility_patent",
+        "software_copyright",
+        "other_award",
+      ],
       user_role: [
         "public_visitor",
         "registered_researcher",
