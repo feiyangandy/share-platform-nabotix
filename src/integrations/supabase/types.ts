@@ -184,78 +184,155 @@ export type Database = {
           },
         ]
       }
+      dataset_versions: {
+        Row: {
+          changes_description: string | null
+          created_at: string
+          data_dict_url: string | null
+          dataset_id: string
+          file_url: string | null
+          id: string
+          published_date: string
+          terms_agreement_url: string | null
+          version_number: string
+        }
+        Insert: {
+          changes_description?: string | null
+          created_at?: string
+          data_dict_url?: string | null
+          dataset_id: string
+          file_url?: string | null
+          id?: string
+          published_date?: string
+          terms_agreement_url?: string | null
+          version_number: string
+        }
+        Update: {
+          changes_description?: string | null
+          created_at?: string
+          data_dict_url?: string | null
+          dataset_id?: string
+          file_url?: string | null
+          id?: string
+          published_date?: string
+          terms_agreement_url?: string | null
+          version_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dataset_versions_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       datasets: {
         Row: {
           approved: boolean | null
           category: string | null
+          contact_info: string | null
+          contact_person: string | null
           created_at: string
+          current_version_date: string | null
+          data_collection_unit: string | null
           data_dict_url: string | null
+          dataset_leader: string | null
+          demographic_fields: Json | null
           description: string
           end_date: string | null
           file_url: string | null
+          first_published_date: string | null
           id: string
           keywords: string[] | null
+          outcome_fields: Json | null
           principal_investigator: string | null
           provider_id: string
           published: boolean | null
           record_count: number | null
+          sampling_method: string | null
           search_count: number | null
           share_all_data: boolean | null
           start_date: string | null
           subject_area_id: string | null
           supervisor_id: string | null
+          terms_agreement_url: string | null
           title_cn: string
           type: Database["public"]["Enums"]["dataset_type"]
           updated_at: string
           variable_count: number | null
+          version_number: string | null
         }
         Insert: {
           approved?: boolean | null
           category?: string | null
+          contact_info?: string | null
+          contact_person?: string | null
           created_at?: string
+          current_version_date?: string | null
+          data_collection_unit?: string | null
           data_dict_url?: string | null
+          dataset_leader?: string | null
+          demographic_fields?: Json | null
           description: string
           end_date?: string | null
           file_url?: string | null
+          first_published_date?: string | null
           id?: string
           keywords?: string[] | null
+          outcome_fields?: Json | null
           principal_investigator?: string | null
           provider_id: string
           published?: boolean | null
           record_count?: number | null
+          sampling_method?: string | null
           search_count?: number | null
           share_all_data?: boolean | null
           start_date?: string | null
           subject_area_id?: string | null
           supervisor_id?: string | null
+          terms_agreement_url?: string | null
           title_cn: string
           type: Database["public"]["Enums"]["dataset_type"]
           updated_at?: string
           variable_count?: number | null
+          version_number?: string | null
         }
         Update: {
           approved?: boolean | null
           category?: string | null
+          contact_info?: string | null
+          contact_person?: string | null
           created_at?: string
+          current_version_date?: string | null
+          data_collection_unit?: string | null
           data_dict_url?: string | null
+          dataset_leader?: string | null
+          demographic_fields?: Json | null
           description?: string
           end_date?: string | null
           file_url?: string | null
+          first_published_date?: string | null
           id?: string
           keywords?: string[] | null
+          outcome_fields?: Json | null
           principal_investigator?: string | null
           provider_id?: string
           published?: boolean | null
           record_count?: number | null
+          sampling_method?: string | null
           search_count?: number | null
           share_all_data?: boolean | null
           start_date?: string | null
           subject_area_id?: string | null
           supervisor_id?: string | null
+          terms_agreement_url?: string | null
           title_cn?: string
           type?: Database["public"]["Enums"]["dataset_type"]
           updated_at?: string
           variable_count?: number | null
+          version_number?: string | null
         }
         Relationships: [
           {
