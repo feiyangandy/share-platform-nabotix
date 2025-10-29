@@ -100,35 +100,43 @@ export function DatasetDetailModal({ dataset, open, onOpenChange }: DatasetDetai
                 基本信息
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">样本量</p>
-                  <p className="font-semibold">{dataset.record_count?.toLocaleString()}</p>
+            <CardContent className="space-y-4">
+              {dataset.principal_investigator && (
+                <div className="pb-2 border-b">
+                  <p className="text-sm text-muted-foreground">首席研究员（PI）</p>
+                  <p className="font-semibold">{dataset.principal_investigator}</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Database className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">变量数</p>
-                  <p className="font-semibold">{dataset.variable_count}</p>
+              )}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">样本量</p>
+                    <p className="font-semibold">{dataset.record_count?.toLocaleString()}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">研究期间</p>
-                  <p className="font-semibold text-sm">
-                    {dataset.start_date} - {dataset.end_date}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <Database className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">变量数</p>
+                    <p className="font-semibold">{dataset.variable_count}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">查看次数</p>
-                  <p className="font-semibold">{dataset.search_count}</p>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">研究期间</p>
+                    <p className="font-semibold text-sm">
+                      {dataset.start_date} - {dataset.end_date}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">查看次数</p>
+                    <p className="font-semibold">{dataset.search_count}</p>
+                  </div>
                 </div>
               </div>
             </CardContent>

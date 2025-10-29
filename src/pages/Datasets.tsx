@@ -269,8 +269,13 @@ const Datasets = () => {
                   <div className="flex items-center justify-between pt-2">
                     <div>
                       <p className="text-xs text-muted-foreground">
-                        {dataset.users?.real_name || '未知提供者'}
+                        提供者: {dataset.users?.real_name || '未知'}
                       </p>
+                      {dataset.principal_investigator && (
+                        <p className="text-xs text-muted-foreground">
+                          PI: {dataset.principal_investigator}
+                        </p>
+                      )}
                       <p className="text-xs text-muted-foreground">
                         发布于 {new Date(dataset.created_at).toLocaleDateString('zh-CN')}
                       </p>

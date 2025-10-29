@@ -186,6 +186,7 @@ export type Database = {
           file_url: string | null
           id: string
           keywords: string[] | null
+          principal_investigator: string | null
           provider_id: string
           published: boolean | null
           record_count: number | null
@@ -209,6 +210,7 @@ export type Database = {
           file_url?: string | null
           id?: string
           keywords?: string[] | null
+          principal_investigator?: string | null
           provider_id: string
           published?: boolean | null
           record_count?: number | null
@@ -232,6 +234,7 @@ export type Database = {
           file_url?: string | null
           id?: string
           keywords?: string[] | null
+          principal_investigator?: string | null
           provider_id?: string
           published?: boolean | null
           record_count?: number | null

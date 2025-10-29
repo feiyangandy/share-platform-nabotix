@@ -22,6 +22,7 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
     description: '',
     type: '',
     category: '',
+    principal_investigator: '',
     start_date: '',
     end_date: '',
     keywords: [] as string[],
@@ -111,6 +112,7 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
         description: formData.description,
         type: formData.type as any,
         category: formData.category || null,
+        principal_investigator: formData.principal_investigator || null,
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
         keywords: formData.keywords.length > 0 ? formData.keywords : null,
@@ -132,6 +134,7 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
         description: '',
         type: '',
         category: '',
+        principal_investigator: '',
         start_date: '',
         end_date: '',
         keywords: [],
@@ -225,6 +228,16 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
                   placeholder="如：心血管疾病、肿瘤学等"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="principal_investigator">首席研究员（PI）</Label>
+              <Input
+                id="principal_investigator"
+                value={formData.principal_investigator}
+                onChange={(e) => setFormData(prev => ({ ...prev, principal_investigator: e.target.value }))}
+                placeholder="请输入首席研究员姓名"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
