@@ -23,16 +23,26 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
     type: '',
     category: '',
     principal_investigator: '',
+    dataset_leader: '',
+    data_collection_unit: '',
+    contact_person: '',
+    contact_info: '',
+    sampling_method: '',
     start_date: '',
     end_date: '',
     keywords: [] as string[],
     record_count: '',
     variable_count: '',
     share_all_data: false,
+    demographic_fields: [] as Array<{name: string, label: string, type: string}>,
+    outcome_fields: [] as Array<{name: string, label: string, type: string}>,
   });
   const [newKeyword, setNewKeyword] = useState('');
+  const [newDemoField, setNewDemoField] = useState({name: '', label: '', type: 'categorical'});
+  const [newOutcomeField, setNewOutcomeField] = useState({name: '', label: '', type: 'binary'});
   const [dataFile, setDataFile] = useState<File | null>(null);
   const [dictFile, setDictFile] = useState<File | null>(null);
+  const [termsFile, setTermsFile] = useState<File | null>(null);
   const [agreements, setAgreements] = useState({
     dataSharing: false,
     ethics: false,
@@ -54,6 +64,40 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
     setFormData(prev => ({
       ...prev,
       keywords: prev.keywords.filter(k => k !== keyword)
+    }));
+  };
+
+  const addDemographicField = () => {
+    if (newDemoField.name && newDemoField.label) {
+      setFormData(prev => ({
+        ...prev,
+        demographic_fields: [...prev.demographic_fields, newDemoField]
+      }));
+      setNewDemoField({name: '', label: '', type: 'categorical'});
+    }
+  };
+
+  const removeDemographicField = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      demographic_fields: prev.demographic_fields.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addOutcomeField = () => {
+    if (newOutcomeField.name && newOutcomeField.label) {
+      setFormData(prev => ({
+        ...prev,
+        outcome_fields: [...prev.outcome_fields, newOutcomeField]
+      }));
+      setNewOutcomeField({name: '', label: '', type: 'binary'});
+    }
+  };
+
+  const removeOutcomeField = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      outcome_fields: prev.outcome_fields.filter((_, i) => i !== index)
     }));
   };
 
@@ -106,6 +150,14 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
         }
       }
 
+      let termsFilePath = null;
+      if (termsFile) {
+        termsFilePath = await uploadFile(termsFile, 'agreements');
+        if (!termsFilePath) {
+          throw new Error('数据使用协议上传失败');
+        }
+      }
+
       // Create dataset record
       const { error } = await supabase.from('datasets').insert({
         title_cn: formData.title_cn,
@@ -113,6 +165,11 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
         type: formData.type as any,
         category: formData.category || null,
         principal_investigator: formData.principal_investigator || null,
+        dataset_leader: formData.dataset_leader || null,
+        data_collection_unit: formData.data_collection_unit || null,
+        contact_person: formData.contact_person || null,
+        contact_info: formData.contact_info || null,
+        sampling_method: formData.sampling_method || null,
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
         keywords: formData.keywords.length > 0 ? formData.keywords : null,
@@ -120,6 +177,9 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
         variable_count: formData.variable_count ? parseInt(formData.variable_count) : null,
         file_url: dataFilePath,
         data_dict_url: dictFilePath,
+        terms_agreement_url: termsFilePath,
+        demographic_fields: formData.demographic_fields.length > 0 ? formData.demographic_fields : null,
+        outcome_fields: formData.outcome_fields.length > 0 ? formData.outcome_fields : null,
         share_all_data: formData.share_all_data,
         provider_id: (await supabase.auth.getUser()).data.user?.id || '',
       });
@@ -135,15 +195,23 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
         type: '',
         category: '',
         principal_investigator: '',
+        dataset_leader: '',
+        data_collection_unit: '',
+        contact_person: '',
+        contact_info: '',
+        sampling_method: '',
         start_date: '',
         end_date: '',
         keywords: [],
         record_count: '',
         variable_count: '',
         share_all_data: false,
+        demographic_fields: [],
+        outcome_fields: [],
       });
       setDataFile(null);
       setDictFile(null);
+      setTermsFile(null);
       setAgreements({
         dataSharing: false,
         ethics: false,
@@ -237,6 +305,64 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
                 value={formData.principal_investigator}
                 onChange={(e) => setFormData(prev => ({ ...prev, principal_investigator: e.target.value }))}
                 placeholder="请输入首席研究员姓名"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dataset_leader">数据集负责人 *</Label>
+                <Input
+                  id="dataset_leader"
+                  value={formData.dataset_leader}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dataset_leader: e.target.value }))}
+                  placeholder="数据集负责人姓名"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="data_collection_unit">数据采集单位 *</Label>
+                <Input
+                  id="data_collection_unit"
+                  value={formData.data_collection_unit}
+                  onChange={(e) => setFormData(prev => ({ ...prev, data_collection_unit: e.target.value }))}
+                  placeholder="如：某某医院"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="contact_person">联系人 *</Label>
+                <Input
+                  id="contact_person"
+                  value={formData.contact_person}
+                  onChange={(e) => setFormData(prev => ({ ...prev, contact_person: e.target.value }))}
+                  placeholder="联系人姓名"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contact_info">联系方式 *</Label>
+                <Input
+                  id="contact_info"
+                  value={formData.contact_info}
+                  onChange={(e) => setFormData(prev => ({ ...prev, contact_info: e.target.value }))}
+                  placeholder="电话或邮箱"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="sampling_method">抽样方法</Label>
+              <Input
+                id="sampling_method"
+                value={formData.sampling_method}
+                onChange={(e) => setFormData(prev => ({ ...prev, sampling_method: e.target.value }))}
+                placeholder="如：随机抽样、分层抽样等"
               />
             </div>
 
@@ -341,6 +467,108 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
             )}
           </div>
 
+          {/* Demographic Fields */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">人口统计学字段</h3>
+            
+            <div className="grid grid-cols-3 gap-2">
+              <Input
+                placeholder="字段名（如：age）"
+                value={newDemoField.name}
+                onChange={(e) => setNewDemoField(prev => ({...prev, name: e.target.value}))}
+              />
+              <Input
+                placeholder="标签（如：年龄）"
+                value={newDemoField.label}
+                onChange={(e) => setNewDemoField(prev => ({...prev, label: e.target.value}))}
+              />
+              <div className="flex gap-2">
+                <Select value={newDemoField.type} onValueChange={(value) => 
+                  setNewDemoField(prev => ({...prev, type: value}))
+                }>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="categorical">分类型</SelectItem>
+                    <SelectItem value="numerical">数值型</SelectItem>
+                    <SelectItem value="ordinal">有序分类</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button type="button" onClick={addDemographicField} size="sm">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {formData.demographic_fields.length > 0 && (
+              <div className="space-y-2">
+                {formData.demographic_fields.map((field, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 border rounded">
+                    <span className="text-sm">
+                      <strong>{field.name}</strong>: {field.label} ({field.type})
+                    </span>
+                    <X 
+                      className="h-4 w-4 cursor-pointer text-muted-foreground hover:text-foreground" 
+                      onClick={() => removeDemographicField(index)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Outcome Fields */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">结局指标字段</h3>
+            
+            <div className="grid grid-cols-3 gap-2">
+              <Input
+                placeholder="字段名（如：mace）"
+                value={newOutcomeField.name}
+                onChange={(e) => setNewOutcomeField(prev => ({...prev, name: e.target.value}))}
+              />
+              <Input
+                placeholder="标签（如：主要心血管事件）"
+                value={newOutcomeField.label}
+                onChange={(e) => setNewOutcomeField(prev => ({...prev, label: e.target.value}))}
+              />
+              <div className="flex gap-2">
+                <Select value={newOutcomeField.type} onValueChange={(value) => 
+                  setNewOutcomeField(prev => ({...prev, type: value}))
+                }>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="binary">二分类</SelectItem>
+                    <SelectItem value="numerical">数值型</SelectItem>
+                    <SelectItem value="categorical">分类型</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button type="button" onClick={addOutcomeField} size="sm">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {formData.outcome_fields.length > 0 && (
+              <div className="space-y-2">
+                {formData.outcome_fields.map((field, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 border rounded">
+                    <span className="text-sm">
+                      <strong>{field.name}</strong>: {field.label} ({field.type})
+                    </span>
+                    <X 
+                      className="h-4 w-4 cursor-pointer text-muted-foreground hover:text-foreground" 
+                      onClick={() => removeOutcomeField(index)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* File Uploads */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">文件上传</h3>
@@ -376,6 +604,26 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
                   {dictFile.name} ({(dictFile.size / 1024 / 1024).toFixed(2)} MB)
                 </div>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="termsFile">数据使用协议 *</Label>
+              <Input
+                id="termsFile"
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={(e) => setTermsFile(e.target.files?.[0] || null)}
+                required
+              />
+              {termsFile && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <File className="h-4 w-4" />
+                  {termsFile.name} ({(termsFile.size / 1024 / 1024).toFixed(2)} MB)
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                请上传数据集所属单位制定的数据使用协议（PDF或Word格式）
+              </p>
             </div>
           </div>
 
