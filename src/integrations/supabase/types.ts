@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           admin_notes: string | null
           applicant_id: string
+          approval_document_url: string | null
           approved_at: string | null
           dataset_id: string
           funding_source: string | null
@@ -34,6 +35,7 @@ export type Database = {
         Insert: {
           admin_notes?: string | null
           applicant_id: string
+          approval_document_url?: string | null
           approved_at?: string | null
           dataset_id: string
           funding_source?: string | null
@@ -50,6 +52,7 @@ export type Database = {
         Update: {
           admin_notes?: string | null
           applicant_id?: string
+          approval_document_url?: string | null
           approved_at?: string | null
           dataset_id?: string
           funding_source?: string | null

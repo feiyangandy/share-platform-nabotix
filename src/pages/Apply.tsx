@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { FileText, User, Building, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { FileText, User, Building, Clock, CheckCircle, AlertCircle, Upload, File } from "lucide-react";
 import { useState } from "react";
 import { useRealtimeQuery } from "@/hooks/useRealtimeQuery";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,6 +59,7 @@ const Apply = () => {
     supervisorId: "",
     agreeToTerms: false
   });
+  const [approvalDocument, setApprovalDocument] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const { data: datasets } = useRealtimeQuery('datasets', {
@@ -81,9 +82,33 @@ const Apply = () => {
       return;
     }
 
+    if (!approvalDocument) {
+      toast.error('请上传审批表签字扫描文档');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      if (!userId) throw new Error('用户未登录');
+
+      // Upload approval document to storage
+      const fileExt = approvalDocument.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from('application-documents')
+        .upload(fileName, approvalDocument);
+
+      if (uploadError) throw uploadError;
+
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('application-documents')
+        .getPublicUrl(fileName);
+
+      // Insert application with document URL
       const { error } = await supabase.from('applications').insert({
         dataset_id: formData.datasetId,
         project_title: formData.projectTitle,
@@ -91,7 +116,8 @@ const Apply = () => {
         funding_source: formData.fundingSource || null,
         purpose: formData.purpose,
         supervisor_id: formData.supervisorId || null,
-        applicant_id: (await supabase.auth.getUser()).data.user?.id || '',
+        applicant_id: userId,
+        approval_document_url: publicUrl,
       });
 
       if (error) throw error;
@@ -108,6 +134,7 @@ const Apply = () => {
         supervisorId: "",
         agreeToTerms: false
       });
+      setApprovalDocument(null);
       
       setActiveTab("status");
     } catch (error) {
@@ -251,6 +278,49 @@ const Apply = () => {
                   </div>
                 </div>
 
+                {/* Approval Document Upload */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Upload className="h-5 w-5" />
+                    审批表上传
+                  </h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="approvalDocument">审批表签字扫描文档 *</Label>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        id="approvalDocument"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            // Check file size (max 10MB)
+                            if (file.size > 10 * 1024 * 1024) {
+                              toast.error('文件大小不能超过10MB');
+                              e.target.value = '';
+                              return;
+                            }
+                            setApprovalDocument(file);
+                            toast.success('文件已选择');
+                          }
+                        }}
+                        className="cursor-pointer"
+                      />
+                    </div>
+                    {approvalDocument && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <File className="h-4 w-4" />
+                        <span>{approvalDocument.name}</span>
+                        <span className="text-xs">({(approvalDocument.size / 1024 / 1024).toFixed(2)} MB)</span>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      请上传盖章签字的审批表扫描件（支持PDF、JPG、PNG格式，最大10MB）
+                    </p>
+                  </div>
+                </div>
+
                 {/* Agreement */}
                 <Card className="border-amber-200 bg-amber-50">
                   <CardHeader>
@@ -290,7 +360,7 @@ const Apply = () => {
                   </Button>
                   <Button 
                     type="submit"
-                    disabled={!formData.agreeToTerms || submitting}
+                    disabled={!formData.agreeToTerms || !approvalDocument || submitting}
                   >
                     {submitting ? '提交中...' : '提交申请'}
                   </Button>
