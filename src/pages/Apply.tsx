@@ -57,6 +57,8 @@ const Apply = () => {
     fundingSource: "",
     purpose: "",
     supervisorId: "",
+    applicantRole: "",
+    applicantType: "",
     agreeToTerms: false
   });
   const [approvalDocument, setApprovalDocument] = useState<File | null>(null);
@@ -118,6 +120,8 @@ const Apply = () => {
         supervisor_id: formData.supervisorId || null,
         applicant_id: userId,
         approval_document_url: publicUrl,
+        applicant_role: formData.applicantRole as "team_researcher" | "collaborative_researcher",
+        applicant_type: formData.applicantType || null,
       });
 
       if (error) throw error;
@@ -132,6 +136,8 @@ const Apply = () => {
         fundingSource: "",
         purpose: "",
         supervisorId: "",
+        applicantRole: "",
+        applicantType: "",
         agreeToTerms: false
       });
       setApprovalDocument(null);
@@ -200,6 +206,46 @@ const Apply = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Applicant Role Selection */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    申请者角色
+                  </h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="applicantRole">角色类型 *</Label>
+                    <Select value={formData.applicantRole} onValueChange={(value) => {
+                      setFormData(prev => ({ ...prev, applicantRole: value, applicantType: "" }))
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="请选择申请者角色" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="team_researcher">团队研究者</SelectItem>
+                        <SelectItem value="collaborative_researcher">合作团队研究者</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.applicantRole === "team_researcher" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="applicantType">研究者类型 *</Label>
+                      <Select value={formData.applicantType} onValueChange={(value) => 
+                        setFormData(prev => ({ ...prev, applicantType: value }))
+                      }>
+                        <SelectTrigger>
+                          <SelectValue placeholder="请选择类型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="employee">在职工作人员</SelectItem>
+                          <SelectItem value="student">学生</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
 
                 {/* Project Information */}

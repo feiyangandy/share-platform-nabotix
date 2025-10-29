@@ -18,6 +18,8 @@ export type Database = {
         Row: {
           admin_notes: string | null
           applicant_id: string
+          applicant_role: Database["public"]["Enums"]["applicant_role"]
+          applicant_type: string | null
           approval_document_url: string | null
           approved_at: string | null
           dataset_id: string
@@ -35,6 +37,8 @@ export type Database = {
         Insert: {
           admin_notes?: string | null
           applicant_id: string
+          applicant_role?: Database["public"]["Enums"]["applicant_role"]
+          applicant_type?: string | null
           approval_document_url?: string | null
           approved_at?: string | null
           dataset_id: string
@@ -52,6 +56,8 @@ export type Database = {
         Update: {
           admin_notes?: string | null
           applicant_id?: string
+          applicant_role?: Database["public"]["Enums"]["applicant_role"]
+          applicant_type?: string | null
           approval_document_url?: string | null
           approved_at?: string | null
           dataset_id?: string
@@ -527,6 +533,7 @@ export type Database = {
       is_authenticated_user: { Args: never; Returns: boolean }
     }
     Enums: {
+      applicant_role: "team_researcher" | "collaborative_researcher"
       application_status: "submitted" | "under_review" | "approved" | "denied"
       dataset_type:
         | "cohort"
@@ -694,6 +701,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      applicant_role: ["team_researcher", "collaborative_researcher"],
       application_status: ["submitted", "under_review", "approved", "denied"],
       dataset_type: [
         "cohort",
