@@ -159,7 +159,7 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
       }
 
       // Create dataset record
-      const { error } = await supabase.from('datasets').insert({
+      const { data, error } = await supabase.from('datasets').insert({
         title_cn: formData.title_cn,
         description: formData.description,
         type: formData.type as any,
@@ -182,11 +182,31 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
         outcome_fields: formData.outcome_fields.length > 0 ? formData.outcome_fields : null,
         share_all_data: formData.share_all_data,
         provider_id: (await supabase.auth.getUser()).data.user?.id || '',
-      });
+      })
+      .select();
 
       if (error) throw error;
 
-      toast.success('数据集上传成功');
+      const datasetId = data?.[0]?.id;
+      toast.success('数据集上传成功，正在分析数据...');
+      
+      // Trigger dataset analysis in background
+      if (datasetId && dataFilePath) {
+        try {
+          const { error: analysisError } = await supabase.functions.invoke('analyze-dataset', {
+            body: { datasetId, filePath: dataFilePath }
+          });
+          
+          if (analysisError) {
+            console.error('Analysis error:', analysisError);
+            toast.error('数据分析失败，但数据集已保存');
+          } else {
+            toast.success('数据分析完成');
+          }
+        } catch (analysisErr) {
+          console.error('Failed to trigger analysis:', analysisErr);
+        }
+      }
       
       // Reset form
       setFormData({

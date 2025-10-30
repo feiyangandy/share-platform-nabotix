@@ -2,3 +2,6 @@ project_id = "hvsfzqgmtfbvrwiiksot"
 
 [functions.fetch-pubmed]
 verify_jwt = false
+
+[functions.analyze-dataset]
+verify_jwt = true
