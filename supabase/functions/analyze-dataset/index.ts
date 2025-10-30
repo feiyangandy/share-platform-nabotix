@@ -52,27 +52,69 @@ serve(async (req) => {
       );
     }
 
-    // Read file content
-    const fileContent = await fileData.text();
-    console.log('File downloaded, size:', fileContent.length);
+    // Parse file based on extension
+    const fileExtension = filePath.split('.').pop()?.toLowerCase();
+    console.log('File extension:', fileExtension);
+    
+    let headers: string[] = [];
+    let dataRows: Record<string, string>[] = [];
 
-    // Parse CSV (simple implementation)
-    const lines = fileContent.split('\n').filter(line => line.trim());
-    if (lines.length < 2) {
+    if (fileExtension === 'csv') {
+      // Parse CSV
+      const fileContent = await fileData.text();
+      console.log('File downloaded, size:', fileContent.length);
+      
+      const lines = fileContent.split('\n').filter(line => line.trim());
+      if (lines.length < 2) {
+        return new Response(
+          JSON.stringify({ error: 'File has insufficient data' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      headers = lines[0].split(',').map(h => h.trim().replace(/['"]/g, ''));
+      dataRows = lines.slice(1).map(line => {
+        const values = line.split(',').map(v => v.trim().replace(/['"]/g, ''));
+        return headers.reduce((obj, header, idx) => {
+          obj[header] = values[idx] || '';
+          return obj;
+        }, {} as Record<string, string>);
+      });
+    } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+      // Parse Excel using SheetJS
+      const arrayBuffer = await fileData.arrayBuffer();
+      console.log('Excel file downloaded, size:', arrayBuffer.byteLength);
+      
+      // Import SheetJS
+      const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs');
+      
+      const workbook = XLSX.read(arrayBuffer);
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      
+      // Convert to JSON
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      
+      if (jsonData.length < 2) {
+        return new Response(
+          JSON.stringify({ error: 'Excel file has insufficient data' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      headers = jsonData[0].map(h => String(h || '').trim());
+      dataRows = jsonData.slice(1).map(row => {
+        return headers.reduce((obj, header, idx) => {
+          obj[header] = String(row[idx] || '').trim();
+          return obj;
+        }, {} as Record<string, string>);
+      });
+    } else {
       return new Response(
-        JSON.stringify({ error: 'File has insufficient data' }),
+        JSON.stringify({ error: 'Unsupported file format. Only CSV and Excel files are supported.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const headers = lines[0].split(',').map(h => h.trim().replace(/['"]/g, ''));
-    const dataRows = lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim().replace(/['"]/g, ''));
-      return headers.reduce((obj, header, idx) => {
-        obj[header] = values[idx] || '';
-        return obj;
-      }, {} as Record<string, string>);
-    });
 
     console.log('Parsed data:', headers.length, 'columns,', dataRows.length, 'rows');
 
