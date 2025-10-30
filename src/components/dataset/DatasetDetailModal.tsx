@@ -22,10 +22,16 @@ export function DatasetDetailModal({ dataset, open, onOpenChange }: DatasetDetai
     order: ['published_date', { ascending: false }]
   });
 
+  const { data: statistics } = useRealtimeQuery('dataset_statistics', {
+    select: '*',
+    eq: ['dataset_id', dataset?.id]
+  });
+
   if (!dataset) return null;
 
   const demographicFields = dataset.demographic_fields || [];
   const outcomeFields = dataset.outcome_fields || [];
+  const stats = statistics || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -35,10 +41,14 @@ export function DatasetDetailModal({ dataset, open, onOpenChange }: DatasetDetai
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview" className="gap-2">
               <Info className="h-4 w-4" />
               概述
+            </TabsTrigger>
+            <TabsTrigger value="statistics" className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              统计数据
             </TabsTrigger>
             <TabsTrigger value="files" className="gap-2">
               <FileText className="h-4 w-4" />
@@ -258,6 +268,177 @@ export function DatasetDetailModal({ dataset, open, onOpenChange }: DatasetDetai
                           </TableCell>
                         </TableRow>
                       ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* (2) Statistics Tab */}
+          <TabsContent value="statistics" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  变量统计概览
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {stats.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>变量名</TableHead>
+                        <TableHead>类型</TableHead>
+                        <TableHead>均值</TableHead>
+                        <TableHead>标准差</TableHead>
+                        <TableHead>总数</TableHead>
+                        <TableHead>缺失值</TableHead>
+                        <TableHead>缺失率</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {stats.map((stat: any) => (
+                        <TableRow key={stat.id}>
+                          <TableCell className="font-mono text-sm">{stat.variable_name}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{stat.variable_type}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {stat.mean_value ? Number(stat.mean_value).toFixed(2) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {stat.std_deviation ? Number(stat.std_deviation).toFixed(2) : '-'}
+                          </TableCell>
+                          <TableCell>{stat.total_count?.toLocaleString() || '-'}</TableCell>
+                          <TableCell>{stat.missing_count?.toLocaleString() || '0'}</TableCell>
+                          <TableCell>
+                            {stat.percentage ? `${Number(stat.percentage).toFixed(1)}%` : '0%'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p className="mb-2">暂无统计数据</p>
+                    <p className="text-sm">统计数据将在数据处理后显示</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Demographic Statistics */}
+            {demographicFields.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    人口统计学指标统计
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>字段</TableHead>
+                        <TableHead>类型</TableHead>
+                        <TableHead>统计信息</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {demographicFields.map((field: any, index: number) => {
+                        const fieldStat = stats.find((s: any) => s.variable_name === field.name);
+                        return (
+                          <TableRow key={index}>
+                            <TableCell>
+                              <div>
+                                <p className="font-mono text-sm">{field.name}</p>
+                                <p className="text-xs text-muted-foreground">{field.label}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{field.type}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {fieldStat ? (
+                                <div className="text-sm">
+                                  {fieldStat.mean_value && (
+                                    <p>均值: {Number(fieldStat.mean_value).toFixed(2)}</p>
+                                  )}
+                                  {fieldStat.std_deviation && (
+                                    <p>标准差: {Number(fieldStat.std_deviation).toFixed(2)}</p>
+                                  )}
+                                  {fieldStat.total_count && (
+                                    <p>样本数: {fieldStat.total_count.toLocaleString()}</p>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">暂无统计</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Outcome Statistics */}
+            {outcomeFields.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    结局指标统计
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>字段</TableHead>
+                        <TableHead>类型</TableHead>
+                        <TableHead>统计信息</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {outcomeFields.map((field: any, index: number) => {
+                        const fieldStat = stats.find((s: any) => s.variable_name === field.name);
+                        return (
+                          <TableRow key={index}>
+                            <TableCell>
+                              <div>
+                                <p className="font-mono text-sm">{field.name}</p>
+                                <p className="text-xs text-muted-foreground">{field.label}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{field.type}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {fieldStat ? (
+                                <div className="text-sm">
+                                  {fieldStat.mean_value && (
+                                    <p>均值: {Number(fieldStat.mean_value).toFixed(2)}</p>
+                                  )}
+                                  {fieldStat.std_deviation && (
+                                    <p>标准差: {Number(fieldStat.std_deviation).toFixed(2)}</p>
+                                  )}
+                                  {fieldStat.total_count && (
+                                    <p>样本数: {fieldStat.total_count.toLocaleString()}</p>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">暂无统计</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </CardContent>
