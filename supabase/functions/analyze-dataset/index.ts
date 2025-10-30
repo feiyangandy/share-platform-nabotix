@@ -85,8 +85,8 @@ serve(async (req) => {
       const arrayBuffer = await fileData.arrayBuffer();
       console.log('Excel file downloaded, size:', arrayBuffer.byteLength);
       
-      // Import SheetJS
-      const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs');
+      // Import SheetJS from esm.sh
+      const XLSX = await import('https://esm.sh/xlsx@0.18.5');
       
       const workbook = XLSX.read(arrayBuffer);
       const firstSheetName = workbook.SheetNames[0];
