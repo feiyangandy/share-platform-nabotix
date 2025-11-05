@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatasetUpload } from "@/components/upload/DatasetUpload";
-import { Search, Filter, Calendar, Users, Database, Download, Upload, X } from "lucide-react";
+import { Search, Filter, Calendar, Users, Database, Download, Upload, X, List, Grid } from "lucide-react";
 import { useState } from "react";
 import { useRealtimeQuery } from "@/hooks/useRealtimeQuery";
 import { DatasetDetailModal } from "@/components/dataset/DatasetDetailModal";
 import { DatasetTrendChart } from "@/components/dataset/DatasetTrendChart";
+import { DatasetTreeView } from "@/components/dataset/DatasetTreeView";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -36,6 +37,7 @@ const Datasets = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [selectedDataset, setSelectedDataset] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'tree'>('grid');
   
   const { data: datasets, loading } = useRealtimeQuery('datasets', {
     select: '*, users!datasets_provider_id_fkey(real_name), research_subjects(name)',
@@ -208,9 +210,29 @@ const Datasets = () => {
           <p className="text-sm text-muted-foreground">
             找到 {filteredDatasets.length} 个数据集
           </p>
+          <div className="flex gap-2">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className="gap-2"
+            >
+              <Grid className="h-4 w-4" />
+              网格视图
+            </Button>
+            <Button
+              variant={viewMode === 'tree' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('tree')}
+              className="gap-2"
+            >
+              <List className="h-4 w-4" />
+              层级视图
+            </Button>
+          </div>
         </div>
 
-        {/* Dataset Grid */}
+        {/* Dataset Grid / Tree View */}
         {loading ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground">加载中...</p>
@@ -219,6 +241,11 @@ const Datasets = () => {
           <div className="text-center py-8">
             <p className="text-muted-foreground">暂无符合条件的数据集</p>
           </div>
+        ) : viewMode === 'tree' ? (
+          <DatasetTreeView 
+            datasets={filteredDatasets} 
+            onDatasetClick={handleDatasetClick}
+          />
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredDatasets.map((dataset: any) => (

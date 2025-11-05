@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      analysis_results: {
+        Row: {
+          analysis_date: string
+          analysis_metadata: Json | null
+          correlations: Json | null
+          created_at: string
+          dataset_id: string
+          field_mappings: Json | null
+          id: string
+          memory_usage_mb: number | null
+          overall_missing_rate: number | null
+          total_columns: number
+          total_rows: number
+          unit_conversions: Json | null
+          updated_at: string
+        }
+        Insert: {
+          analysis_date?: string
+          analysis_metadata?: Json | null
+          correlations?: Json | null
+          created_at?: string
+          dataset_id: string
+          field_mappings?: Json | null
+          id?: string
+          memory_usage_mb?: number | null
+          overall_missing_rate?: number | null
+          total_columns: number
+          total_rows: number
+          unit_conversions?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          analysis_date?: string
+          analysis_metadata?: Json | null
+          correlations?: Json | null
+          created_at?: string
+          dataset_id?: string
+          field_mappings?: Json | null
+          id?: string
+          memory_usage_mb?: number | null
+          overall_missing_rate?: number | null
+          total_columns?: number
+          total_rows?: number
+          unit_conversions?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_results_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applications: {
         Row: {
           admin_notes: string | null
@@ -247,6 +303,7 @@ export type Database = {
           id: string
           keywords: string[] | null
           outcome_fields: Json | null
+          parent_dataset_id: string | null
           principal_investigator: string | null
           provider_id: string
           published: boolean | null
@@ -282,6 +339,7 @@ export type Database = {
           id?: string
           keywords?: string[] | null
           outcome_fields?: Json | null
+          parent_dataset_id?: string | null
           principal_investigator?: string | null
           provider_id: string
           published?: boolean | null
@@ -317,6 +375,7 @@ export type Database = {
           id?: string
           keywords?: string[] | null
           outcome_fields?: Json | null
+          parent_dataset_id?: string | null
           principal_investigator?: string | null
           provider_id?: string
           published?: boolean | null
@@ -335,6 +394,13 @@ export type Database = {
           version_number?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "datasets_parent_dataset_id_fkey"
+            columns: ["parent_dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "datasets_provider_id_fkey"
             columns: ["provider_id"]

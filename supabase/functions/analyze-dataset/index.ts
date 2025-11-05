@@ -168,6 +168,35 @@ serve(async (req) => {
     // Use AI to identify demographic and outcome fields
     const aiAnalysis = await analyzeFieldsWithAI(headers, statistics);
 
+    // Calculate correlations for numeric variables
+    const numericStats = statistics.filter(s => s.variable_type === 'numeric');
+    const correlations = calculateCorrelations(dataRows, numericStats);
+
+    // Calculate overall missing rate
+    const totalCells = dataRows.length * headers.length;
+    const totalMissing = statistics.reduce((sum, s) => sum + (s.missing_count || 0), 0);
+    const overallMissingRate = (totalMissing / totalCells) * 100;
+
+    // Store comprehensive analysis results
+    const { error: analysisError } = await supabase
+      .from('analysis_results')
+      .insert({
+        dataset_id: datasetId,
+        total_rows: dataRows.length,
+        total_columns: headers.length,
+        overall_missing_rate: overallMissingRate,
+        correlations: correlations,
+        analysis_metadata: {
+          numeric_variables: numericStats.length,
+          categorical_variables: statistics.length - numericStats.length,
+          analysis_version: '1.0'
+        }
+      });
+
+    if (analysisError) {
+      console.error('Insert analysis results error:', analysisError);
+    }
+
     // Update dataset with identified fields
     const { error: updateError } = await supabase
       .from('datasets')
@@ -192,7 +221,12 @@ serve(async (req) => {
         success: true,
         statisticsCount: statistics.length,
         demographicFields: aiAnalysis.demographicFields,
-        outcomeFields: aiAnalysis.outcomeFields
+        outcomeFields: aiAnalysis.outcomeFields,
+        analysisResults: {
+          totalRows: dataRows.length,
+          totalColumns: headers.length,
+          overallMissingRate: overallMissingRate.toFixed(2)
+        }
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -205,6 +239,70 @@ serve(async (req) => {
     );
   }
 });
+
+function calculateCorrelations(dataRows: Record<string, string>[], numericStats: any[]): any {
+  const correlations: any = {};
+  
+  if (numericStats.length < 2) return correlations;
+
+  // Calculate Pearson correlation for each pair of numeric variables
+  for (let i = 0; i < numericStats.length; i++) {
+    for (let j = i + 1; j < numericStats.length; j++) {
+      const var1 = numericStats[i].variable_name;
+      const var2 = numericStats[j].variable_name;
+      
+      const values1: number[] = [];
+      const values2: number[] = [];
+      
+      // Collect paired values
+      for (const row of dataRows) {
+        const val1 = parseFloat(row[var1]);
+        const val2 = parseFloat(row[var2]);
+        if (!isNaN(val1) && !isNaN(val2)) {
+          values1.push(val1);
+          values2.push(val2);
+        }
+      }
+      
+      if (values1.length > 1) {
+        const correlation = pearsonCorrelation(values1, values2);
+        if (!isNaN(correlation)) {
+          correlations[`${var1}_${var2}`] = {
+            variable1: var1,
+            variable2: var2,
+            correlation: Number(correlation.toFixed(3)),
+            sample_size: values1.length
+          };
+        }
+      }
+    }
+  }
+  
+  return correlations;
+}
+
+function pearsonCorrelation(x: number[], y: number[]): number {
+  const n = x.length;
+  if (n === 0) return NaN;
+  
+  const meanX = x.reduce((a, b) => a + b, 0) / n;
+  const meanY = y.reduce((a, b) => a + b, 0) / n;
+  
+  let numerator = 0;
+  let sumXSquared = 0;
+  let sumYSquared = 0;
+  
+  for (let i = 0; i < n; i++) {
+    const diffX = x[i] - meanX;
+    const diffY = y[i] - meanY;
+    numerator += diffX * diffY;
+    sumXSquared += diffX * diffX;
+    sumYSquared += diffY * diffY;
+  }
+  
+  const denominator = Math.sqrt(sumXSquared * sumYSquared);
+  return denominator === 0 ? 0 : numerator / denominator;
+}
 
 async function analyzeFieldsWithAI(
   headers: string[],

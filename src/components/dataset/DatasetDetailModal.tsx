@@ -6,8 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { useRealtimeQuery } from "@/hooks/useRealtimeQuery";
-import { Users, Calendar, Database, TrendingUp, FileText, Download, Info, Shield, Clock } from "lucide-react";
+import { Users, Calendar, Database, TrendingUp, FileText, Download, Info, Shield, Clock, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
+import { AnalysisTab } from "./AnalysisTab";
 
 interface DatasetDetailModalProps {
   dataset: any;
@@ -41,7 +42,7 @@ export function DatasetDetailModal({ dataset, open, onOpenChange }: DatasetDetai
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview" className="gap-2">
               <Info className="h-4 w-4" />
               概述
@@ -49,6 +50,10 @@ export function DatasetDetailModal({ dataset, open, onOpenChange }: DatasetDetai
             <TabsTrigger value="statistics" className="gap-2">
               <TrendingUp className="h-4 w-4" />
               统计数据
+            </TabsTrigger>
+            <TabsTrigger value="analysis" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              分析
             </TabsTrigger>
             <TabsTrigger value="files" className="gap-2">
               <FileText className="h-4 w-4" />
@@ -275,7 +280,12 @@ export function DatasetDetailModal({ dataset, open, onOpenChange }: DatasetDetai
             )}
           </TabsContent>
 
-          {/* (2) Statistics Tab */}
+          {/* (2) Analysis Tab */}
+          <TabsContent value="analysis" className="mt-4">
+            <AnalysisTab datasetId={dataset.id} />
+          </TabsContent>
+
+          {/* (3) Statistics Tab */}
           <TabsContent value="statistics" className="space-y-4 mt-4">
             <Card>
               <CardHeader>
