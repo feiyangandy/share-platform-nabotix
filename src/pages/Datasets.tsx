@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatasetUpload } from "@/components/upload/DatasetUpload";
 import { Search, Filter, Calendar, Users, Database, Download, Upload, X, List, Grid } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRealtimeQuery } from "@/hooks/useRealtimeQuery";
 import { DatasetDetailModal } from "@/components/dataset/DatasetDetailModal";
 import { DatasetTrendChart } from "@/components/dataset/DatasetTrendChart";
@@ -38,6 +38,19 @@ const Datasets = () => {
   const [selectedDataset, setSelectedDataset] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'tree'>('grid');
+
+  // Listen for custom event to open dataset detail
+  useEffect(() => {
+    const handleOpenDatasetDetail = (event: any) => {
+      setSelectedDataset(event.detail);
+      setShowDetail(true);
+    };
+
+    window.addEventListener('openDatasetDetail', handleOpenDatasetDetail);
+    return () => {
+      window.removeEventListener('openDatasetDetail', handleOpenDatasetDetail);
+    };
+  }, []);
   
   const { data: datasets, loading } = useRealtimeQuery('datasets', {
     select: '*, users!datasets_provider_id_fkey(real_name), research_subjects(name)',

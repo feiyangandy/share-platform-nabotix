@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { useRealtimeQuery } from "@/hooks/useRealtimeQuery";
-import { Users, Calendar, Database, TrendingUp, FileText, Download, Info, Shield, Clock, BarChart3 } from "lucide-react";
+import { Users, Calendar, Database, TrendingUp, FileText, Download, Info, Shield, Clock, BarChart3, Link2, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import { AnalysisTab } from "./AnalysisTab";
 
@@ -28,7 +28,23 @@ export function DatasetDetailModal({ dataset, open, onOpenChange }: DatasetDetai
     eq: ['dataset_id', dataset?.id]
   });
 
+  // Fetch parent dataset if this is a follow-up
+  const { data: parentDatasets } = useRealtimeQuery('datasets', {
+    select: '*',
+    eq: ['id', dataset?.parent_dataset_id],
+    limit: 1
+  });
+
+  // Fetch follow-up datasets if this is a baseline
+  const { data: followupDatasets } = useRealtimeQuery('datasets', {
+    select: '*',
+    eq: ['parent_dataset_id', dataset?.id]
+  });
+
   if (!dataset) return null;
+
+  const parentDataset = parentDatasets?.[0];
+  const followups = followupDatasets || [];
 
   const demographicFields = dataset.demographic_fields || [];
   const outcomeFields = dataset.outcome_fields || [];
@@ -39,6 +55,57 @@ export function DatasetDetailModal({ dataset, open, onOpenChange }: DatasetDetai
       <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">{dataset.title_cn}</DialogTitle>
+          
+          {/* Navigation Links for Baseline/Follow-up */}
+          {(parentDataset || followups.length > 0) && (
+            <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
+              {parentDataset && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => {
+                    onOpenChange(false);
+                    // Open parent dataset in a new modal
+                    setTimeout(() => {
+                      const event = new CustomEvent('openDatasetDetail', { detail: parentDataset });
+                      window.dispatchEvent(event);
+                    }, 100);
+                  }}
+                >
+                  <Link2 className="h-4 w-4" />
+                  查看基线数据集
+                  <ArrowRight className="h-3 w-3" />
+                </Button>
+              )}
+              
+              {followups.length > 0 && (
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="text-sm text-muted-foreground">随访数据集:</span>
+                  {followups.map((followup: any) => (
+                    <Button
+                      key={followup.id}
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => {
+                        onOpenChange(false);
+                        // Open follow-up dataset in a new modal
+                        setTimeout(() => {
+                          const event = new CustomEvent('openDatasetDetail', { detail: followup });
+                          window.dispatchEvent(event);
+                        }, 100);
+                      }}
+                    >
+                      <Link2 className="h-4 w-4" />
+                      {followup.title_cn}
+                      <ArrowRight className="h-3 w-3" />
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
