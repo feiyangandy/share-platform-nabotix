@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Upload, File, X, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { BaselineDatasetSelector } from './BaselineDatasetSelector';
 
 interface DatasetUploadProps {
   onSuccess?: () => void;
@@ -36,6 +37,8 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
     share_all_data: false,
     demographic_fields: [] as Array<{name: string, label: string, type: string}>,
     outcome_fields: [] as Array<{name: string, label: string, type: string}>,
+    is_followup: false,
+    parent_dataset_id: '',
   });
   const [newKeyword, setNewKeyword] = useState('');
   const [newDemoField, setNewDemoField] = useState({name: '', label: '', type: 'categorical'});
@@ -181,6 +184,7 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
         demographic_fields: formData.demographic_fields.length > 0 ? formData.demographic_fields : null,
         outcome_fields: formData.outcome_fields.length > 0 ? formData.outcome_fields : null,
         share_all_data: formData.share_all_data,
+        parent_dataset_id: formData.is_followup && formData.parent_dataset_id ? formData.parent_dataset_id : null,
         provider_id: (await supabase.auth.getUser()).data.user?.id || '',
       })
       .select();
@@ -228,6 +232,8 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
         share_all_data: false,
         demographic_fields: [],
         outcome_fields: [],
+        is_followup: false,
+        parent_dataset_id: '',
       });
       setDataFile(null);
       setDictFile(null);
@@ -316,6 +322,38 @@ export function DatasetUpload({ onSuccess }: DatasetUploadProps) {
                   placeholder="如：心血管疾病、肿瘤学等"
                 />
               </div>
+            </div>
+
+            {/* Baseline/Follow-up Section */}
+            <div className="space-y-4 p-4 border rounded-lg bg-blue-50/50">
+              <div className="flex items-center space-x-3">
+                <Checkbox
+                  id="isFollowup"
+                  checked={formData.is_followup}
+                  onCheckedChange={(checked) => {
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      is_followup: checked as boolean,
+                      parent_dataset_id: checked ? prev.parent_dataset_id : ''
+                    }));
+                  }}
+                />
+                <div>
+                  <Label htmlFor="isFollowup" className="text-sm font-medium">
+                    这是随访数据集
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    如果此数据集是某个基线数据集的随访数据，请勾选此项并选择对应的基线数据集
+                  </p>
+                </div>
+              </div>
+
+              {formData.is_followup && (
+                <BaselineDatasetSelector
+                  value={formData.parent_dataset_id}
+                  onChange={(value) => setFormData(prev => ({ ...prev, parent_dataset_id: value }))}
+                />
+              )}
             </div>
 
             <div className="space-y-2">

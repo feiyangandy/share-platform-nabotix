@@ -257,9 +257,16 @@ const Datasets = () => {
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-lg leading-tight">{dataset.title_cn}</CardTitle>
-                    <Badge variant="secondary" className="shrink-0">
-                      {typeLabels[dataset.type as keyof typeof typeLabels] || dataset.type}
-                    </Badge>
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <Badge variant="secondary">
+                        {typeLabels[dataset.type as keyof typeof typeLabels] || dataset.type}
+                      </Badge>
+                      {dataset.parent_dataset_id && (
+                        <Badge variant="outline" className="text-xs">
+                          随访数据
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {(dataset.keywords || []).map((keyword: string, index: number) => (
